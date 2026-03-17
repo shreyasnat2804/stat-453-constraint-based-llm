@@ -1,0 +1,13 @@
+.claude/
+.claude
+**/.claude/
+**/.claude
+*.claude
+CLAUDE.md
+.env
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+scores/
+.claude-skills/
+.pytest_cache/
