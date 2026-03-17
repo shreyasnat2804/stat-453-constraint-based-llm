@@ -1,0 +1,220 @@
+{
+  "total_records": 500,
+  "by_primary_cluster": {
+    "mixed": {
+      "count": 211,
+      "pct": 42.2
+    },
+    "Length": {
+      "count": 160,
+      "pct": 32.0
+    },
+    "Keyword": {
+      "count": 73,
+      "pct": 14.6
+    },
+    "Format": {
+      "count": 38,
+      "pct": 7.6
+    },
+    "Numerical_Constraints": {
+      "count": 6,
+      "pct": 1.2
+    },
+    "Example": {
+      "count": 3,
+      "pct": 0.6
+    },
+    "Language": {
+      "count": 3,
+      "pct": 0.6
+    },
+    "Factuality": {
+      "count": 2,
+      "pct": 0.4
+    },
+    "Helpfulness": {
+      "count": 2,
+      "pct": 0.4
+    },
+    "Style": {
+      "count": 1,
+      "pct": 0.2
+    },
+    "Topic": {
+      "count": 1,
+      "pct": 0.2
+    }
+  },
+  "category_presence": {
+    "Length": {
+      "count": 499,
+      "pct": 99.8
+    },
+    "Keyword": {
+      "count": 486,
+      "pct": 97.2
+    },
+    "Style": {
+      "count": 462,
+      "pct": 92.4
+    },
+    "Background_Info": {
+      "count": 442,
+      "pct": 88.4
+    },
+    "Format": {
+      "count": 432,
+      "pct": 86.4
+    },
+    "Helpfulness": {
+      "count": 430,
+      "pct": 86.0
+    },
+    "Topic": {
+      "count": 395,
+      "pct": 79.0
+    },
+    "Factuality": {
+      "count": 389,
+      "pct": 77.8
+    },
+    "Example": {
+      "count": 339,
+      "pct": 67.8
+    },
+    "Start_With": {
+      "count": 315,
+      "pct": 63.0
+    },
+    "Language": {
+      "count": 297,
+      "pct": 59.4
+    },
+    "End_With": {
+      "count": 295,
+      "pct": 59.0
+    },
+    "Numerical_Constraints": {
+      "count": 281,
+      "pct": 56.2
+    },
+    "Tone": {
+      "count": 184,
+      "pct": 36.8
+    },
+    "Situation": {
+      "count": 123,
+      "pct": 24.6
+    },
+    "Role_Playing": {
+      "count": 82,
+      "pct": 16.4
+    },
+    "Emotion": {
+      "count": 48,
+      "pct": 9.6
+    },
+    "No_Commas": {
+      "count": 6,
+      "pct": 1.2
+    },
+    "All_Lower": {
+      "count": 2,
+      "pct": 0.4
+    }
+  },
+  "num_constraint_types_distribution": {
+    "7": 5,
+    "8": 24,
+    "9": 50,
+    "10": 113,
+    "11": 122,
+    "12": 97,
+    "13": 61,
+    "14": 19,
+    "15": 9
+  },
+  "top_cluster_labels": {
+    "Background_Info+Example+Factuality+Format+Helpfulness+Keyword+Language+Length+Numerical_Constraints+Style+Topic": {
+      "count": 19,
+      "pct": 3.8
+    },
+    "Background_Info+Example+Factuality+Format+Helpfulness+Keyword+Length+Numerical_Constraints+Style+Topic": {
+      "count": 17,
+      "pct": 3.4
+    },
+    "Background_Info+End_With+Example+Factuality+Format+Helpfulness+Keyword+Language+Length+Numerical_Constraints+Start_With+Style+Topic": {
+      "count": 17,
+      "pct": 3.4
+    },
+    "Background_Info+Example+Factuality+Format+Helpfulness+Keyword+Language+Length+Numerical_Constraints+Style+Tone+Topic": {
+      "count": 11,
+      "pct": 2.2
+    },
+    "Background_Info+Example+Factuality+Format+Helpfulness+Keyword+Length+Numerical_Constraints+Style": {
+      "count": 8,
+      "pct": 1.6
+    },
+    "Background_Info+End_With+Example+Factuality+Format+Helpfulness+Keyword+Length+Start_With+Style+Topic": {
+      "count": 8,
+      "pct": 1.6
+    },
+    "Background_Info+End_With+Example+Factuality+Format+Helpfulness+Keyword+Language+Length+Start_With+Style+Topic": {
+      "count": 7,
+      "pct": 1.4
+    },
+    "Background_Info+End_With+Factuality+Format+Helpfulness+Keyword+Language+Length+Numerical_Constraints+Start_With+Style+Topic": {
+      "count": 7,
+      "pct": 1.4
+    },
+    "Background_Info+End_With+Example+Factuality+Helpfulness+Keyword+Language+Length+Numerical_Constraints+Start_With+Style+Topic": {
+      "count": 7,
+      "pct": 1.4
+    },
+    "Background_Info+Example+Factuality+Format+Helpfulness+Keyword+Language+Length+Numerical_Constraints+Style": {
+      "count": 6,
+      "pct": 1.2
+    },
+    "Background_Info+End_With+Example+Factuality+Format+Helpfulness+Keyword+Length+Numerical_Constraints+Start_With+Style+Topic": {
+      "count": 6,
+      "pct": 1.2
+    },
+    "Background_Info+End_With+Factuality+Format+Helpfulness+Keyword+Language+Length+Start_With+Style+Topic": {
+      "count": 6,
+      "pct": 1.2
+    },
+    "Background_Info+Example+Factuality+Format+Helpfulness+Keyword+Length+Style+Topic": {
+      "count": 6,
+      "pct": 1.2
+    },
+    "Background_Info+End_With+Example+Factuality+Format+Helpfulness+Keyword+Language+Length+Role_Playing+Situation+Start_With+Style+Tone+Topic": {
+      "count": 6,
+      "pct": 1.2
+    },
+    "Background_Info+Example+Factuality+Format+Helpfulness+Keyword+Language+Length+Style+Topic": {
+      "count": 5,
+      "pct": 1.0
+    },
+    "Background_Info+Example+Factuality+Format+Helpfulness+Keyword+Language+Length+Style+Tone+Topic": {
+      "count": 4,
+      "pct": 0.8
+    },
+    "Background_Info+End_With+Example+Factuality+Helpfulness+Keyword+Length+Start_With+Style+Topic": {
+      "count": 4,
+      "pct": 0.8
+    },
+    "Background_Info+End_With+Factuality+Helpfulness+Keyword+Language+Length+Start_With+Style+Topic": {
+      "count": 4,
+      "pct": 0.8
+    },
+    "Background_Info+Example+Factuality+Format+Helpfulness+Keyword+Language+Length+Numerical_Constraints+Style+Tone": {
+      "count": 4,
+      "pct": 0.8
+    },
+    "Background_Info+End_With+Factuality+Format+Helpfulness+Keyword+Length+Start_With+Style+Tone+Topic": {
+      "count": 4,
+      "pct": 0.8
+    }
+  }
+}
