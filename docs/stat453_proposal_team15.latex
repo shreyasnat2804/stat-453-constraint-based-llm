@@ -1,0 +1,159 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{graphicx}
+
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+% ---- Title Page ----
+\begin{titlepage}
+\centering
+\vspace*{2.5cm}
+
+{\LARGE\bfseries Improving Multi-Constraint Instruction Following in 1B-Parameter Language Models via RECAST Fine-Tuning\par}
+
+\vspace{2.5cm}
+
+{\large
+\textbf{Name:} Shreyas Natarajan, Masters Student\\
+Major in Data Science\\
+\textbf{Contact}: \href{mailto:natarajan9@wisc.edu}{natarajan9@wisc.edu}\\[1em]
+
+\textbf{Name}: Fnu Rinkle Rose Renny, Masters Student\\
+Major in Data Science\\
+\textbf{Contact}: \href{mailto:rinklerosere@wisc.edu}{rinklerosere@wisc.edu}\\[1em]
+
+\textbf{Name}: Mark Aashish Lnu, Masters Student\\
+Major in Data Science\\
+\textbf{Contact}: \href{mailto:mlnu5@wisc.edu}{mlnu5@wisc.edu}\\[1em]
+
+\textbf{Name}: Gayathri Ethiraj, Masters Student\\
+Major in Data Science\\
+\textbf{Contact}: \href{mailto:gethiraj@wisc.edu}{gethiraj@wisc.edu}\\
+}
+
+\vfill
+
+{\large University of Wisconsin--Madison\par}
+\vspace{0.5cm}
+{\large \textbf{Course number:} STAT 453, Spring 2026\par}
+{\large \textbf{Team number:} 15\par}
+
+\end{titlepage}
+
+% ---- Body ----
+
+\noindent\textbf{1. Motivation.}
+Large language models are powerful but expensive to deploy at scale. Small language models (around 1B parameters) offer a practical alternative with substantially lower cost and faster inference, yet they struggle with constraint-following: satisfying specific requirements on format, length, tone, style, keywords, and structure simultaneously. This difficulty compounds as the number of constraints increases, a setting that reflects real-world tasks such as drafting emails, generating structured reports, or following style guides. We fine-tune 1B-parameter models using the RECAST framework to improve multi-constraint instruction-following across eight constraint categories: Length, Format, Keyword, Style, Tone, Role-Playing, Start/End-With, and Numerical. We study how supervised fine-tuning affects performance across these categories and whether a well-tuned 1B model can approach the instruction-following ability of much larger instruct-tuned models.
+
+\medskip
+\noindent\textbf{2. Existing Literature.}
+Instruction following has been formalized through benchmarks like IFEval~[1] and FollowBench~[2], which show that performance degrades sharply with constraint complexity. Notably, Llama-3.2-1B-Instruct scores only $\sim$55-60\% prompt-strict accuracy on IFEval, underscoring how severely small models struggle with structured constraints. The RECAST framework~[3] addresses the data side of this problem by synthesizing multi-constraint datasets in which every constraint has an automated validator, enabling fine-grained supervision. RECAST fine-tuning at 7-8B scale outperforms much larger instruct-tuned models on constraint-following benchmarks, but it has not been tested at 1B. Separately, LoRA~[4] and full fine-tuning occupy fundamentally different regions of the weight space: LoRA introduces ``intruder dimensions'' that can accelerate catastrophic forgetting, while full fine-tuning adjusts existing singular vectors more conservatively~[5]. These differences have been studied on reasoning and code tasks, but not on constraint following, leaving open whether parameter-efficient methods are sufficient for this problem.
+
+\medskip
+\noindent\textbf{3. Limitations of Existing Models or Methods.}
+The existing literature has three key gaps. First, IFEval and FollowBench document constraint-following failures comprehensively, but they do not provide training data or recipes to fix them, they are diagnostic tools, not solutions. Second, RECAST addresses the training data side and demonstrates strong results at 7B and 8B scales, but has not been tested at 1B; whether its constraint-dense supervision translates to meaningful gains at this scale, where representational capacity is already limited, remains unknown. Third, while LoRA is the dominant fine-tuning method used in practice, prior comparisons against full fine-tuning have focused on reasoning and code tasks, not constraint following, leaving open whether LoRA's parameter-efficient updates suffice for multi-dimensional constraint adherence at small scale. Finally, existing evaluations tend to aggregate results across constraint types, obscuring which categories are hardest for small models and where targeted improvements are most needed.
+
+\medskip
+\noindent\textbf{4. Overview of Proposed Project.}
+We will (1) establish zero-shot baselines by running RECAST-30K evaluation on pretrained 1B-parameter models, (2) construct a mixed training set combining a Chinchilla-appropriate stratified sample of Tulu with the RECAST-30K training split, (3) compare full fine-tuning and LoRA on this combined data across all four models, and (4) conduct per-constraint-category analysis to identify which constraint types benefit most from each training strategy. A stretch goal is a lightweight constraint-aware text editor that demonstrates the real-world utility of our fine-tuned models.
+
+\medskip
+\noindent\textbf{Models.}
+Our project employs a two-stage approach to measure improvements in constraint-following after fine-tuning. In the first stage, we evaluate a set of instruction-tuned language models in the 1-2B parameter range to establish baselines:
+\begin{itemize}[noitemsep, topsep=2pt]
+    \item Llama 3.2 1B Instruct (1.24B parameters)
+    \item Gemma 3 1B IT (1B parameters)
+    \item Qwen 2.5 1.5B Instruct (1.54B parameters)
+    \item SmolLM2 1.7B Instruct (1.7B parameters)
+\end{itemize}
+In the second stage, each model is fine-tuned under consistent hyperparameter settings to ensure fair comparison. We explore full fine-tuning and LoRA (Low-Rank Adaptation). Post fine-tuning, models are evaluated on a mixed constraint-following benchmark and compared against their pre-fine-tuned baseline outputs.
+
+\medskip
+\noindent\textbf{Datasets.}
+The \textit{RECAST-30K} dataset~[3] is a collection of 30,000 high-quality instances designed to help language models follow instructions with multiple simultaneous constraints. It uses a constraint back-translation method, where constraints are extracted from existing high-quality responses and re-injected into the instruction to ensure they are physically achievable. The dataset covers 15-19 diverse constraint types (including format, length, style, and tone) and includes automated rule-based and LLM-based validators for each constraint type.
+
+\textit{Tulu}~[6] is a large, diverse instruction-following corpus assembled from multiple open sources (FLAN, ShareGPT, OpenAssistant, and others). Following Chinchilla scaling laws~[7], a 1B-parameter model trained for one epoch optimally consumes roughly 20-30B tokens; we will stratified-sample Tulu to stay within this budget while preserving diversity. This prevents the model from forgetting general instruction-following ability while gaining constraint-specific skill from RECAST.
+
+\medskip
+\noindent\textbf{Measurements.}
+We evaluate our method using three key categories of metrics that reflect both constraint-following performance and training efficiency using different dataset mixtures.
+
+\textbf{(1) Constraint-Following Performance:} We report Constraint Satisfaction Rate (CSR), the fraction of constraints satisfied per response, and Hard CSR, the fraction of responses satisfying all constraints simultaneously.
+
+\textbf{(2) Fine-Tuning Improvement:} We measure per-category CSR gains for each model over its baseline across all eight constraint types. Results are compared across all models.
+
+\textbf{(3) Generalization:} We evaluate instruction-following performance on IFEval to detect any degradation after fine-tuning on RECAST and Tulu, alongside training and validation loss trends.
+
+
+\medskip
+\noindent\textbf{Compute Budget.}
+We experiment with four publicly available instruct-tuned models in the 1-2B parameter range. Each is evaluated under two training regimes, full fine-tuning and LoRA (rank 8 and 16, applied to attention projection matrices), yielding 12 base runs (4 models $\times$ 3 configurations). All training is conducted in bfloat16 on A100 40GB GPUs, with $\sim$524K training examples, batch size 32, sequence length 512, and 1-2 epochs ($\approx$16,400-32,800 steps). A typical 1B-parameter model requires ~2 GB for weights, ~7-12 GB peak VRAM for LoRA fine-tuning (~2-5 hr/run), and ~16-26 GB for full fine-tuning (~4-9 hr/run) on a single GPU.
+
+% \begin{table}[h]
+% \centering
+% \small
+% \begin{tabular}{lcccc}
+% \toprule
+% \textbf{Model} & \textbf{Params} & \textbf{Weights} & \textbf{LoRA peak} & \textbf{Full FT peak} \\
+% \midrule
+% Llama 3.2 1B Instruct / Gemma 3 1B IT & 1.0B & 2.0 GB & $\sim$7 GB  & $\sim$16 GB \\
+% Qwen2.5 1.5B Instruct                 & 1.5B & 3.0 GB & $\sim$10 GB & $\sim$22 GB \\
+% SmolLM2 1.7B Instruct                 & 1.7B & 3.4 GB & $\sim$12 GB & $\sim$26 GB \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+
+% \begin{table}[h]
+% \centering
+% \small
+% \begin{tabular}{lcc}
+% \toprule
+% \textbf{Model} & \textbf{LoRA (per run)} & \textbf{Full FT (per run)} \\
+% \midrule
+% Llama 3.2 1B Instruct / Gemma 3 1B IT & $\sim$2-3 hr & $\sim$4-6 hr \\
+% Qwen2.5 1.5B Instruct                  & $\sim$3-4 hr & $\sim$6-8 hr \\
+% SmolLM2 1.7B Instruct                  & $\sim$3-5 hr & $\sim$7-9 hr \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+
+All LoRA runs fit on a single A100 40GB. Full fine-tuning of the 1.5B and 1.7B models requires gradient checkpointing; the 1B models fine-tune comfortably without it. Hyperparameter sweeps add learning rate choices and LoRA rank variation for an estimated 8-10 additional runs on the best-performing model. Total estimated GPU-hours: 12 base runs ($\approx$4-9 hr each) + sweeps ($\approx$30-40 hr) $\approx$ \textbf{100-150 A100-hours}. We plan to use Colab Pro+ for LoRA runs on the 1B models.
+
+\medskip
+\noindent\textbf{Collaboration Plan.}
+Each team member is equally responsible, committed, and will actively contribute to the project. Tasks will be divided across model development, data preparation, and evaluation metric creation to ensure balanced and efficient collaboration.
+
+\medskip
+{\sloppy
+\noindent\textbf{References}
+
+\medskip
+\noindent[1] J. Zhou et al., ``Instruction-Following Evaluation for Large Language Models,'' arXiv preprint arXiv:2311.07911 (2023).
+
+\medskip
+\noindent[2] Y. Jiang et al., ``FollowBench: A Multi-level Fine-grained Constraints Following Benchmark for Large Language Models,'' Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL 2024), pages 4667-4688.
+
+\medskip
+\noindent[3] Z. Guo et al., ``RECAST: Expanding the Boundaries of LLMs' Complex Instruction Following with Multi-Constraint Data,'' arXiv preprint arXiv:2505.19030 (2025).
+
+\medskip
+\noindent[4] E. J. Hu et al., ``LoRA: Low-Rank Adaptation of Large Language Models,'' International Conference on Learning Representations (ICLR 2022). arXiv preprint arXiv:2106.09685.
+
+\medskip
+\noindent[5] R. Shuttleworth et al., ``LoRA vs Full Fine-tuning: An Illusion of Equivalence,'' arXiv preprint arXiv:2410.21228 (2024).
+
+\medskip
+\noindent[6] H. Ivison et al., ``Camels in a Changing Climate: Enhancing LM Adaptation with Tulu 2,'' arXiv preprint arXiv:2311.10702 (2023).
+
+\medskip
+\noindent[7] J. Hoffmann et al., ``Training Compute-Optimal Large Language Models,'' Proceedings of NeurIPS (2022).
+}
+
+\end{document}
