@@ -34,8 +34,7 @@ def plot_per_type_bar(per_type_rates, model_name, results_dir):
     types = [item[0] for item in sorted_items]
     rates = [item[1] for item in sorted_items]
     colors = [
-        "#2ecc71" if r >= 0.7 else "#f39c12" if r >= 0.4 else "#e74c3c"
-        for r in rates
+        "#2ecc71" if r >= 0.7 else "#f39c12" if r >= 0.4 else "#e74c3c" for r in rates
     ]
 
     fig, ax = plt.subplots(figsize=(10, 6))

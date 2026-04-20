@@ -6,7 +6,8 @@ that rule-based checkers cannot handle.
 import copy
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import (AutoModelForCausalLM, AutoTokenizer,
+                          BitsAndBytesConfig)
 
 JUDGE_MODEL_ID = "google/gemma-2-9b-it"
 
@@ -50,7 +51,9 @@ class JudgeModel:
         allocated = torch.cuda.memory_allocated() / 1024**3
         print(f"Judge model loaded. GPU VRAM used: {allocated:.2f} GB")
 
-    def judge_constraint(self, prompt: str, response: str, constraint: dict) -> bool | None:
+    def judge_constraint(
+        self, prompt: str, response: str, constraint: dict
+    ) -> bool | None:
         """Evaluate whether a response satisfies a single constraint.
 
         Args:
@@ -63,10 +66,14 @@ class JudgeModel:
             True if PASS, False if FAIL, None if the verdict could not be determined.
         """
         try:
-            constraint_type = constraint.get("type", constraint.get("constraint_type", "unknown"))
+            constraint_type = constraint.get(
+                "type", constraint.get("constraint_type", "unknown")
+            )
             constraint_value = constraint.get(
                 "value",
-                constraint.get("description", constraint.get("requirement", str(constraint))),
+                constraint.get(
+                    "description", constraint.get("requirement", str(constraint))
+                ),
             )
 
             judge_prompt = (
@@ -80,7 +87,9 @@ class JudgeModel:
                 "Does the response satisfy this constraint? Answer PASS or FAIL only:\n"
             )
 
-            inputs = self.tokenizer(judge_prompt, return_tensors="pt").to(self.model.device)
+            inputs = self.tokenizer(judge_prompt, return_tensors="pt").to(
+                self.model.device
+            )
             input_length = inputs["input_ids"].shape[1]
 
             with torch.no_grad():
@@ -91,7 +100,11 @@ class JudgeModel:
                 )
 
             new_tokens = outputs[0][input_length:]
-            verdict = self.tokenizer.decode(new_tokens, skip_special_tokens=True).strip().upper()
+            verdict = (
+                self.tokenizer.decode(new_tokens, skip_special_tokens=True)
+                .strip()
+                .upper()
+            )
 
             if verdict.startswith("PASS"):
                 return True

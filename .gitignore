@@ -11,3 +11,5 @@ __pycache__/
 scores/
 .claude-skills/
 .pytest_cache/
+**/.DS_Store
+**/settings.json

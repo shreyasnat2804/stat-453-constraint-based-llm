@@ -76,7 +76,7 @@ class ConstraintChecker:
 
     def _check_sentence_count(self, response: str, constraint: dict):
         try:
-            sentences = [s.strip() for s in re.split(r'[.!?]+', response) if s.strip()]
+            sentences = [s.strip() for s in re.split(r"[.!?]+", response) if s.strip()]
             actual = len(sentences)
             target = self._get_target(constraint)
             relation = constraint.get("relation", "at_least")
@@ -86,7 +86,7 @@ class ConstraintChecker:
 
     def _check_paragraph_count(self, response: str, constraint: dict):
         try:
-            paragraphs = [p.strip() for p in re.split(r'\n\n+', response) if p.strip()]
+            paragraphs = [p.strip() for p in re.split(r"\n\n+", response) if p.strip()]
             actual = len(paragraphs)
             target = self._get_target(constraint)
             relation = constraint.get("relation", "at_least")
@@ -179,8 +179,9 @@ class ConstraintChecker:
         try:
             lines = response.split("\n")
             bullet_count = sum(
-                1 for line in lines
-                if line.strip() and re.match(r'^[\u2022\-\*]\s', line.strip())
+                1
+                for line in lines
+                if line.strip() and re.match(r"^[\u2022\-\*]\s", line.strip())
             )
             target = self._get_target(constraint)
             relation = constraint.get("relation", "at_least")
@@ -192,8 +193,7 @@ class ConstraintChecker:
         try:
             lines = response.split("\n")
             numbered = sum(
-                1 for line in lines
-                if re.match(r'^\d+[.\)]\s', line.strip())
+                1 for line in lines if re.match(r"^\d+[.\)]\s", line.strip())
             )
             return numbered > 0
         except Exception:
@@ -201,7 +201,7 @@ class ConstraintChecker:
 
     def _check_sections(self, response: str, constraint: dict):
         try:
-            section_count = len(re.findall(r'##', response))
+            section_count = len(re.findall(r"##", response))
             target = self._get_target(constraint)
             relation = constraint.get("relation", "at_least")
             return self._compare(section_count, target, relation)
@@ -255,8 +255,8 @@ class ConstraintChecker:
     def _check_highlight(self, response: str, constraint: dict):
         try:
             # Count **...** and *...* occurrences (bold first, then italic)
-            bold = re.findall(r'\*\*[^*]+\*\*', response)
-            italic = re.findall(r'(?<!\*)\*(?!\*)[^*]+\*(?!\*)', response)
+            bold = re.findall(r"\*\*[^*]+\*\*", response)
+            italic = re.findall(r"(?<!\*)\*(?!\*)[^*]+\*(?!\*)", response)
             actual = len(bold) + len(italic)
             target = self._get_target(constraint)
             if target is not None:
