@@ -1,6 +1,7 @@
 """Tests for ConstraintChecker."""
 
 import json
+
 import pytest
 from constraint_checker import ConstraintChecker
 
@@ -11,12 +12,20 @@ checker = ConstraintChecker()
 class TestWordCount:
     def test_at_least_pass(self):
         resp = "one two three four five"
-        c = {"type": "length_constraint:word_count", "target": 5, "relation": "at_least"}
+        c = {
+            "type": "length_constraint:word_count",
+            "target": 5,
+            "relation": "at_least",
+        }
         assert checker.check_constraint(resp, c) is True
 
     def test_at_least_fail(self):
         resp = "one two"
-        c = {"type": "length_constraint:word_count", "target": 5, "relation": "at_least"}
+        c = {
+            "type": "length_constraint:word_count",
+            "target": 5,
+            "relation": "at_least",
+        }
         assert checker.check_constraint(resp, c) is False
 
     def test_exactly(self):
@@ -34,12 +43,20 @@ class TestWordCount:
 class TestSentenceCount:
     def test_basic(self):
         resp = "Hello. World. How are you?"
-        c = {"type": "length_constraint:sentence_count", "target": 3, "relation": "exactly"}
+        c = {
+            "type": "length_constraint:sentence_count",
+            "target": 3,
+            "relation": "exactly",
+        }
         assert checker.check_constraint(resp, c) is True
 
     def test_fail(self):
         resp = "Just one sentence"
-        c = {"type": "length_constraint:sentence_count", "target": 2, "relation": "at_least"}
+        c = {
+            "type": "length_constraint:sentence_count",
+            "target": 2,
+            "relation": "at_least",
+        }
         assert checker.check_constraint(resp, c) is False
 
 
@@ -47,7 +64,11 @@ class TestSentenceCount:
 class TestParagraphCount:
     def test_two_paragraphs(self):
         resp = "Paragraph one.\n\nParagraph two."
-        c = {"type": "length_constraint:paragraph_count", "target": 2, "relation": "exactly"}
+        c = {
+            "type": "length_constraint:paragraph_count",
+            "target": 2,
+            "relation": "exactly",
+        }
         assert checker.check_constraint(resp, c) is True
 
 
@@ -73,12 +94,22 @@ class TestKeywordExistence:
 class TestKeywordFrequency:
     def test_at_least(self):
         resp = "hello hello hello world"
-        c = {"type": "keywords:frequency", "keyword": "hello", "target": 3, "relation": "at_least"}
+        c = {
+            "type": "keywords:frequency",
+            "keyword": "hello",
+            "target": 3,
+            "relation": "at_least",
+        }
         assert checker.check_constraint(resp, c) is True
 
     def test_not_enough(self):
         resp = "hello world"
-        c = {"type": "keywords:frequency", "keyword": "hello", "target": 3, "relation": "at_least"}
+        c = {
+            "type": "keywords:frequency",
+            "keyword": "hello",
+            "target": 3,
+            "relation": "at_least",
+        }
         assert checker.check_constraint(resp, c) is False
 
 
@@ -118,22 +149,38 @@ class TestAllCapsCount:
     def test_at_most_pass(self):
         """Current behavior: always uses <= (at_most)."""
         resp = "HELLO WORLD this is normal"
-        c = {"type": "capitalization:all_caps_count", "target": 3, "relation": "at_most"}
+        c = {
+            "type": "capitalization:all_caps_count",
+            "target": 3,
+            "relation": "at_most",
+        }
         assert checker.check_constraint(resp, c) is True
 
     def test_at_least_pass(self):
         resp = "HELLO WORLD this is normal"
-        c = {"type": "capitalization:all_caps_count", "target": 1, "relation": "at_least"}
+        c = {
+            "type": "capitalization:all_caps_count",
+            "target": 1,
+            "relation": "at_least",
+        }
         assert checker.check_constraint(resp, c) is True  # 2 >= 1
 
     def test_exactly_pass(self):
         resp = "HELLO WORLD this is normal"
-        c = {"type": "capitalization:all_caps_count", "target": 2, "relation": "exactly"}
+        c = {
+            "type": "capitalization:all_caps_count",
+            "target": 2,
+            "relation": "exactly",
+        }
         assert checker.check_constraint(resp, c) is True  # 2 == 2
 
     def test_exactly_fail(self):
         resp = "HELLO WORLD this is normal"
-        c = {"type": "capitalization:all_caps_count", "target": 3, "relation": "exactly"}
+        c = {
+            "type": "capitalization:all_caps_count",
+            "target": 3,
+            "relation": "exactly",
+        }
         assert checker.check_constraint(resp, c) is False  # 2 != 3
 
 
@@ -282,7 +329,11 @@ class TestCheckAll:
     def test_all_pass(self):
         resp = "hello hello hello"
         constraints = [
-            {"type": "length_constraint:word_count", "target": 3, "relation": "exactly"},
+            {
+                "type": "length_constraint:word_count",
+                "target": 3,
+                "relation": "exactly",
+            },
             {"type": "keywords:existence", "keywords": ["hello"]},
         ]
         result = checker.check_all(resp, constraints)

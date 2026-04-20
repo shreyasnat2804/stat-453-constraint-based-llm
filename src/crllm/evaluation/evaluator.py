@@ -14,7 +14,6 @@ from collections import defaultdict
 from datetime import datetime
 
 import pandas as pd
-
 from constraint_checker import ConstraintChecker
 
 
@@ -70,7 +69,9 @@ def compute_metrics(results: list[dict]) -> dict:
     # Overall
     all_checked = [r for r in results if r.get("num_checked", 0) > 0]
     if all_checked:
-        overall_csr = sum(r["per_constraint_csr"] for r in all_checked) / len(all_checked)
+        overall_csr = sum(r["per_constraint_csr"] for r in all_checked) / len(
+            all_checked
+        )
         overall_hard = sum(1 for r in all_checked if r["hard_csr"]) / len(all_checked)
     else:
         overall_csr, overall_hard = 0.0, 0.0
@@ -134,15 +135,17 @@ def save_results_csv(
     # Per-instance rows
     rows = []
     for r in results:
-        rows.append({
-            "id": r.get("id", ""),
-            "difficulty_level": r.get("difficulty_level", ""),
-            "num_constraints": r.get("num_constraints", 0),
-            "num_checked": r.get("num_checked", 0),
-            "num_passed": r.get("num_passed", 0),
-            "per_constraint_csr": r.get("per_constraint_csr", 0.0),
-            "hard_csr": r.get("hard_csr", False),
-        })
+        rows.append(
+            {
+                "id": r.get("id", ""),
+                "difficulty_level": r.get("difficulty_level", ""),
+                "num_constraints": r.get("num_constraints", 0),
+                "num_checked": r.get("num_checked", 0),
+                "num_passed": r.get("num_passed", 0),
+                "per_constraint_csr": r.get("per_constraint_csr", 0.0),
+                "hard_csr": r.get("hard_csr", False),
+            }
+        )
     df = pd.DataFrame(rows)
 
     # Summary row
@@ -177,7 +180,9 @@ def save_results_csv(
     return filepath
 
 
-def print_summary(metrics: dict, model_name: str, label: str, elapsed_seconds: float = 0.0):
+def print_summary(
+    metrics: dict, model_name: str, label: str, elapsed_seconds: float = 0.0
+):
     """Print a human-readable summary of evaluation metrics."""
     by_level = metrics["by_level"]
     print(f"\n{'='*60}")
@@ -195,6 +200,8 @@ def print_summary(metrics: dict, model_name: str, label: str, elapsed_seconds: f
         print(f"  {level:<10} {m['csr']:>8.4f} {m['hard_csr']:>10.4f} {m['count']:>8}")
 
     print(f"\n  Per-type pass rates:")
-    for ctype, rate in sorted(metrics["per_type"].items(), key=lambda x: x[1], reverse=True):
+    for ctype, rate in sorted(
+        metrics["per_type"].items(), key=lambda x: x[1], reverse=True
+    ):
         print(f"    {ctype:<45} {rate:.4f}")
     print()
