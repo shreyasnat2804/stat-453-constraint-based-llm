@@ -21,6 +21,7 @@ import argparse
 import json
 import logging
 import tempfile
+import zipfile
 from pathlib import Path
 
 from src.crllm.dataset.augmentation.back_translate import (
@@ -37,7 +38,19 @@ logger = logging.getLogger(__name__)
 
 
 def _load_records(input_path: Path) -> list[dict]:
-    """Load records from a JSON array or JSONL file."""
+    """Load records from a JSON array, JSONL, or zipped JSONL file."""
+    # Handle zip files — read the first file inside the archive
+    if input_path.suffix == ".zip":
+        records = []
+        with zipfile.ZipFile(input_path) as z:
+            name = z.namelist()[0]
+            with z.open(name) as f:
+                for line in f:
+                    line = line.decode("utf-8").strip()
+                    if line:
+                        records.append(json.loads(line))
+        return records
+
     text = input_path.read_text(encoding="utf-8")
     stripped = text.lstrip()
 

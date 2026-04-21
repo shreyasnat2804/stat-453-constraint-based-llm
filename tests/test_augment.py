@@ -1,6 +1,7 @@
 """Tests for augmentation orchestrator."""
 
 import json
+import zipfile
 
 import pytest
 from unittest.mock import patch
@@ -65,6 +66,15 @@ class TestLoadRecords:
             f.write(json.dumps(SAMPLE_RECORDS[1]) + "\n")
         records = _load_records(p)
         assert len(records) == 2
+
+    def test_loads_zipped_jsonl(self, tmp_path):
+        p = tmp_path / "data.jsonl.zip"
+        with zipfile.ZipFile(p, "w") as z:
+            content = "\n".join(json.dumps(r) for r in SAMPLE_RECORDS)
+            z.writestr("data.jsonl", content)
+        records = _load_records(p)
+        assert len(records) == 2
+        assert records[0]["id"] == "rec_001"
 
     def test_invalid_json_raises(self, tmp_path):
         p = tmp_path / "bad.json"
