@@ -19,7 +19,10 @@ from datasets import load_dataset, DatasetDict
 from peft import LoraConfig, get_peft_model, TaskType
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from trl import SFTTrainer
-
+from datasets import Dataset, DatasetDict
+import os
+from huggingface_hub import login
+login(token=os.environ["HF_TOKEN"])
 
 # =============================================================================
 # SECTION 1: CONFIGURATION
@@ -36,7 +39,7 @@ MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
 # Options:
 #   - HF repo:    "shreyas-hf-username/recast-30k-prepared"
 #   - Local path: "./data/recast_prepared"
-DATASET_PATH = "HINT-lab/RECAST-30K"   # <-- update with Shreyas's output
+DATASET_PATH = "./datalora.json"   # <-- update with Shreyas's output
 
 # --- LoRA Hyperparameters ---
 # RANK (r): How many "dimensions" the adapter uses. Higher = more expressive
@@ -123,8 +126,14 @@ def format_example(example: dict) -> dict:
     NOTE: If Shreyas's dataset uses different field names (e.g. "prompt"
     instead of "instruction"), update the .get() calls below.
     """
-    instruction = example.get("instruction", example.get("prompt", ""))
-    response = example.get("response", example.get("output", ""))
+    #instruction = example.get("instruction", example.get("prompt", ""))
+    #response = example.get("response", example.get("output", ""))
+    #return {
+    #    "text": PROMPT_TEMPLATE.format(instruction=instruction, response=response)
+    #}
+    # Your data uses "input" and "output" fields (not "instruction"/"response")
+    instruction = example.get("input", "")
+    response = example.get("output", "")
     return {
         "text": PROMPT_TEMPLATE.format(instruction=instruction, response=response)
     }
@@ -133,17 +142,19 @@ def format_example(example: dict) -> dict:
 # =============================================================================
 # SECTION 3: LOAD AND PREPARE THE DATASET
 # =============================================================================
-
+"""
 def build_dataset() -> DatasetDict:
     """
+"""
     Loads RECAST-30K, applies formatting, and splits into train/validation.
 
     Returns a DatasetDict with two keys:
         "train"      → 90% of the data, used for gradient updates
         "validation" → 10% of the data, used to monitor overfitting
     """
+"""
     print(f"\n[1/4] Loading dataset from: {DATASET_PATH}")
-    dataset = load_dataset(DATASET_PATH, split="train")
+    dataset = load_dataset("json", data_files=DATASET_PATH, split="train")
 
     print(f"      Raw examples: {len(dataset)}")
 
@@ -158,8 +169,40 @@ def build_dataset() -> DatasetDict:
 
     print(f"      Train: {len(split['train'])} | Val: {len(split['test'])}")
     return DatasetDict({"train": split["train"], "validation": split["test"]})
+"""
+import json
+from datasets import Dataset
 
+def build_dataset() -> DatasetDict:
+    print(f"\n[1/4] Loading dataset from: {DATASET_PATH}")
 
+    # Read the JSON file manually and extract only "input" and "output"
+    # This bypasses PyArrow's schema casting issue with deeply nested fields
+    with open(DATASET_PATH, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+
+    # Extract only the two fields we need, skip everything else
+    clean = []
+    for row in raw:
+        instruction = row.get("input", "")
+        response    = row.get("output", "")
+        if instruction and response:   # skip any rows missing either field
+            clean.append({
+                "text": PROMPT_TEMPLATE.format(
+                    instruction=instruction,
+                    response=response
+                )
+            })
+
+    print(f"      Raw examples loaded: {len(clean)}")
+
+    # Convert to HuggingFace Dataset
+    dataset = Dataset.from_list(clean)
+    dataset = dataset.shuffle(seed=42)
+    split   = dataset.train_test_split(test_size=0.1, seed=42)
+
+    print(f"      Train: {len(split['train'])} | Val: {len(split['test'])}")
+    return DatasetDict({"train": split["train"], "validation": split["test"]})
 # =============================================================================
 # SECTION 4: LOAD MODEL AND TOKENIZER
 # =============================================================================
@@ -270,13 +313,14 @@ def train(model, tokenizer, dataset: DatasetDict):
         per_device_train_batch_size=PER_DEVICE_BATCH_SIZE,
         gradient_accumulation_steps=GRAD_ACCUMULATION_STEPS,
         learning_rate=LEARNING_RATE,
-        lr_scheduler_type="cosine",       # gradually reduces LR over training
-        warmup_ratio=0.03,                # slowly ramp up LR for the first 3% of steps
+        lr_scheduler_type="cosine",
+        warmup_steps=10,              # replaced warmup_ratio     # gradually reduces LR over training
+        #warmup_ratio=0.03,                # slowly ramp up LR for the first 3% of steps
         weight_decay=0.01,                # mild regularisation to prevent overfitting
-        bf16=True,                        # use bfloat16 on A100
+        #bf16=True,                        # use bfloat16 on A100
         optim="adamw_torch",              # standard optimiser for LLM fine-tuning
         logging_steps=50,                 # print train loss every 50 steps
-        evaluation_strategy="steps",
+        eval_strategy="steps",
         eval_steps=200,                   # check val loss every 200 steps
         save_strategy="steps",
         save_steps=200,
@@ -290,13 +334,10 @@ def train(model, tokenizer, dataset: DatasetDict):
 
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         args=training_args,
         train_dataset=dataset["train"],
         eval_dataset=dataset["validation"],
-        dataset_text_field="text",        # the column our format_example() created
-        max_seq_length=MAX_SEQ_LENGTH,
-        packing=False,                    # don't combine short examples into one sequence
     )
 
     trainer.train()
@@ -335,7 +376,7 @@ def save_adapter(trainer):
 # =============================================================================
 # MAIN
 # =============================================================================
-
+"""
 if __name__ == "__main__":
     print("=" * 60)
     print("  LoRA Fine-Tuning — STAT 453 / RECAST Project")
@@ -353,3 +394,29 @@ if __name__ == "__main__":
     print(f"  1. Check val loss curve in {OUTPUT_DIR}/")
     print(f"  2. Run CSR evaluation on RECAST test split using saved adapter")
     print(f"  3. Share {adapter_path} with Mark")
+ """
+
+if __name__ == "__main__": #only to test
+    print("=" * 60)
+    print("  LoRA Fine-Tuning — STAT 453 / RECAST Project")
+    print(f"  Model:  {MODEL_NAME}")
+    print(f"  Rank:   {LORA_RANK}  |  Alpha: {LORA_ALPHA}  |  LR: {LEARNING_RATE}")
+    print("=" * 60)
+
+    # Step 1: Test dataset only
+    dataset = build_dataset()
+    print("\n✓ Dataset loaded successfully")
+    print(f"  Sample text preview:\n  {dataset['train'][0]['text'][:200]}")
+
+    # Step 2: Test model loads
+    model, tokenizer = load_model_and_tokenizer()
+    print("\n✓ Model loaded successfully")
+
+    # Step 3: Test LoRA injection only
+    model = apply_lora(model)
+    print("\n✓ LoRA adapters injected successfully")
+
+    print("\n" + "=" * 60)
+    print("  Pipeline smoke test PASSED.")
+    print("  All 3 stages work. Run full training on Colab A100.")
+    print("=" * 60)
