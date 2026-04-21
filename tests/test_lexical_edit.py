@@ -6,6 +6,7 @@ import random
 import pytest
 
 from src.crllm.dataset.augmentation.lexical_edit import (
+    _extract_entities,
     detect_prompt_field,
     eda_augment,
     extract_protected_tokens,
@@ -102,6 +103,30 @@ class TestExtractProtectedTokens:
         protected = extract_protected_tokens(SAMPLE_RECORD)
         assert "length" in protected
         assert "keyword" in protected
+
+    def test_named_entities_protected(self):
+        record = {
+            "winner_prompt": "Write a letter to François Müller about his trip to Paris.",
+            "response_of_winner_prompt": "Dear François...",
+            "added_constraint": {},
+            "id": "entity_test",
+        }
+        protected = extract_protected_tokens(record)
+        assert "françois" in protected
+        assert "müller" in protected
+        assert "paris" in protected
+
+    def test_entity_at_sentence_start_not_protected(self):
+        # "Write" is at sentence start — should NOT be extracted as entity
+        entities = _extract_entities("Write a letter. Send it to José.")
+        assert "write" not in entities
+        assert "send" not in entities
+        assert "josé" in entities
+
+    def test_allcaps_not_treated_as_entity(self):
+        entities = _extract_entities("Use the JSON format. Contact IBM today.")
+        assert "JSON" not in entities and "json" not in entities
+        assert "IBM" not in entities and "ibm" not in entities
 
 
 # ═════════════════════════════════════════════════════════════════════════════

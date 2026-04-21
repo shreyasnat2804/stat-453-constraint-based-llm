@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from src.crllm.dataset.augmentation.back_translate import (
+    _extract_entities,
     detect_prompt_field,
     extract_constraint_tokens,
     verify_constraint_preservation,
@@ -120,6 +121,22 @@ class TestExtractConstraintTokens:
     def test_extracts_format_keywords(self):
         tokens = extract_constraint_tokens(SAMPLE_RECORD)
         assert "bullet" in tokens
+
+    def test_extracts_named_entities(self):
+        record = {
+            "winner_prompt": "Write a letter to François Müller about Paris.",
+            "added_constraint": {},
+            "id": "entity_test",
+        }
+        tokens = extract_constraint_tokens(record)
+        assert "françois" in tokens
+        assert "müller" in tokens
+        assert "paris" in tokens
+
+    def test_allcaps_not_treated_as_entity(self):
+        entities = _extract_entities("Use the JSON format. Contact IBM today.")
+        assert "json" not in entities
+        assert "ibm" not in entities
 
 
 # ---------------------------------------------------------------------------
