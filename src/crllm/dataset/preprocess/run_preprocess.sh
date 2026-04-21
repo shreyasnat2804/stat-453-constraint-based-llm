@@ -10,4 +10,5 @@ python preprocess.py \
         --output /Users/gayu/github/uwm_gayu/spring2026/stat453/project/stat-453-constraint-based-llm/datasets/recast_30k_clean.jsonl \
         --min_length 15 \
         --dedup_threshold 0.85 \
-        --imbalance_threshold 0.5
+        --imbalance_threshold 0.5 \
+        --n_jobs 8
