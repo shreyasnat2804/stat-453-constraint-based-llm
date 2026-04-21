@@ -143,6 +143,25 @@ def back_translate_prompt(
 # ---------------------------------------------------------------------------
 
 
+def _extract_entities(text: str) -> set[str]:
+    """Extract likely proper nouns (capitalised words not at sentence start)."""
+    entities: set[str] = set()
+    sentences = re.split(r"[.!?]\s+", text)
+    for sent in sentences:
+        words = sent.split()
+        for word in words[1:]:
+            cleaned = word.strip(".,;:!?'\"()[]{}*")
+            if (
+                cleaned
+                and cleaned[0].isupper()
+                and not cleaned.isupper()
+                and not cleaned.isdigit()
+                and len(cleaned) >= 2
+            ):
+                entities.add(cleaned.lower())
+    return entities
+
+
 def extract_constraint_tokens(record: dict) -> set[str]:
     """Extract constraint-critical tokens from a record.
 
@@ -152,6 +171,7 @@ def extract_constraint_tokens(record: dict) -> set[str]:
     - Quoted substrings in the prompt
     - Format keywords (json, bullet, etc.)
     - Constraint category names
+    - Proper nouns / named entities
     """
     tokens: set[str] = set()
 
@@ -181,6 +201,9 @@ def extract_constraint_tokens(record: dict) -> set[str]:
                 for desc in descriptions:
                     for word in str(desc).split():
                         tokens.add(word.lower())
+
+    # Proper nouns / named entities from prompt
+    tokens.update(_extract_entities(prompt))
 
     return tokens
 

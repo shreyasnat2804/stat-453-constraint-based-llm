@@ -76,6 +76,25 @@ def get_wordnet_synonyms(word: str) -> list[str]:
     return synonyms
 
 
+def _extract_entities(text: str) -> set[str]:
+    """Extract likely proper nouns (capitalised words not at sentence start)."""
+    entities: set[str] = set()
+    sentences = re.split(r"[.!?]\s+", text)
+    for sent in sentences:
+        words = sent.split()
+        for word in words[1:]:
+            cleaned = word.strip(".,;:!?'\"()[]{}*")
+            if (
+                cleaned
+                and cleaned[0].isupper()
+                and not cleaned.isupper()
+                and not cleaned.isdigit()
+                and len(cleaned) >= 2
+            ):
+                entities.add(cleaned.lower())
+    return entities
+
+
 def extract_protected_tokens(record: dict) -> set[str]:
     """Build the set of tokens that must NOT be modified during augmentation."""
     protected: set[str] = set()
@@ -111,6 +130,9 @@ def extract_protected_tokens(record: dict) -> set[str]:
 
     # Hardcoded format keywords
     protected.update(FORMAT_KEYWORDS)
+
+    # Proper nouns / named entities from prompt
+    protected.update(_extract_entities(prompt_text))
 
     return protected
 
