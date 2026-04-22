@@ -11,10 +11,11 @@
 ## Installation
 
 ```bash
-pip install langdetect emoji datasketch
+pip install langdetect emoji datasketch joblib
 ```
 
 > **NLTK** is an optional dependency. If available, its full English stopword list is used; otherwise the script falls back to a built-in list with no loss of functionality.
+> **joblib** is optional too — without it, the script falls back to a single-threaded pass.
 
 ---
 
@@ -31,7 +32,8 @@ python preprocess.py \
         --output recast_30k_clean.jsonl \
         --min_length 15 \
         --dedup_threshold 0.85 \
-        --imbalance_threshold 0.5
+        --imbalance_threshold 0.5 \
+        --n_jobs -1
 ```
 
 ### Arguments
@@ -43,6 +45,7 @@ python preprocess.py \
 | `--min_length` | `15` | Minimum word count in `winner_prompt` after cleaning |
 | `--dedup_threshold` | `0.85` | Jaccard similarity threshold for near-duplicate detection (0–1) |
 | `--imbalance_threshold` | `0.5` | Warn if any constraint category falls below this fraction of the expected uniform share |
+| `--n_jobs` | `-1` | Parallel workers for joblib (-1 = all cores, 1 = serial) |
 
 ---
 
@@ -56,7 +59,6 @@ The script is matched to the actual RECAST-30K field names:
 | `response_of_winner_prompt` | `str` | The winning response — used as the training target |
 | `added_constraint` | `dict[str, list[str]]` | Constraint descriptions grouped by category |
 | `added_constraint_num` | `int` | Total constraint count (must match actual count) |
-| `rule_evaluate_dict` | `dict` | Rule-based validator specs used for alignment checking |
 | `id` | `str` | Unique record identifier |
 
 **Constraint categories** in the data:
@@ -68,7 +70,7 @@ The script is matched to the actual RECAST-30K field names:
 
 ## Cleaning Pipeline
 
-Records pass through 9 sequential steps. A record is dropped the moment it fails any step.
+Records pass through 8 sequential steps. A record is dropped the moment it fails any step. Steps i–vi run in parallel across records via `joblib` (loky backend); step vii is sequential because the LSH index is stateful.
 
 ### Step i — Language Detection
 Runs `langdetect` on `winner_prompt`. Any non-English record is dropped. Requires the `langdetect` package; if unavailable, this step is skipped.
@@ -97,27 +99,12 @@ Validates the `added_constraint` dict:
 - Every category must map to a non-empty list of non-empty strings
 - `added_constraint_num` must exactly match the actual total count of constraint descriptions across all categories
 
-### Step vii — Instruction-Response Alignment
-Re-runs the rule-based validators from `rule_evaluate_dict` against `response_of_winner_prompt` (not the reference response stored in `func_input[0]`, which is metadata from a different model). Validators implemented:
-
-| Validator function | What it checks |
-|---|---|
-| `evaluate_word_length` | Word count within `[min, max]` |
-| `evaluate_sentence_length` | Sentence count ≈ target (±3 tolerance) |
-| `evaluate_keyword` | Each required keyword appears the required number of times |
-| `evaluate_start_with` | Response starts with the specified word |
-| `evaluate_end_with` | Response ends with the specified word |
-| `check_english_uppercase` | At most 1 all-caps word in the response |
-| `check_english_lowercase` | Response is entirely lowercase (≤2 uppercase chars tolerated) |
-| `contains_no_punctuation` | Response contains no commas |
-| `evaluate_format` | Structural format check (passthrough — format type not encoded in func_input) |
-
-### Step viii — Deduplication
+### Step vii — Deduplication
 Two-level dedup on `winner_prompt`:
 1. **Exact** — SHA-256 fingerprint of lowercased, whitespace-normalised prompt
-2. **Fuzzy** — MinHash LSH with character 5-shingles at the configured Jaccard threshold (requires `datasketch`; falls back to exact-only if unavailable)
+2. **Fuzzy** — MinHash LSH with character 5-shingles at the configured Jaccard threshold (requires `datasketch`; falls back to exact-only if unavailable). MinHash fingerprints are pre-computed in parallel; the LSH query/insert is sequential.
 
-### Step ix — Distribution Audit
+### Step viii — Distribution Audit
 After processing, counts how many kept records belong to each constraint category. Logs a warning for any category whose share falls below `--imbalance_threshold × (1 / N_categories)`. Does not drop records — informational only, to flag skew before augmentation.
 
 ---
@@ -134,7 +121,6 @@ Each output record is guaranteed to:
 - Have a non-empty, printable prompt of at least `--min_length` words
 - Have a non-empty response
 - Have a valid, internally-consistent `added_constraint` dict
-- Pass all rule-based constraint validators in `rule_evaluate_dict`
 - Be unique (not a near-duplicate of any earlier record)
 
 ---
@@ -158,7 +144,6 @@ Each output record is guaranteed to:
 09:14:33 [INFO]   Skipped — non-English          :       83
 09:14:33 [INFO]   Skipped — too short            :      142
 09:14:33 [INFO]   Skipped — bad constraint       :      210
-09:14:33 [INFO]   Skipped — alignment fail       :    1,847
 09:14:33 [INFO]   Skipped — duplicate            :      306
 ...
 09:14:33 [INFO]   Constraint category distribution (kept records):

@@ -1,0 +1,118 @@
+./run_preprocess.sh: line 7: 
+Preprocesses the raw data for training. This includes cleaning, deduplication, and balancing the dataset.
+Usage-----
+$ chmod +x run_preprocess.sh
+$ ./run_preprocess.sh
+: No such file or directory
+WARNING:root:NLTK stopwords unavailable — using built-in fallback list.
+15:47:55 [INFO] =================================================================
+15:47:55 [INFO]   RECAST Full Cleaning Pipeline — STAT 453 Team 15
+15:47:55 [INFO] =================================================================
+15:47:55 [INFO]   Input              : /Users/gayu/github/uwm_gayu/spring2026/stat453/project/stat-453-constraint-based-llm/datasets/RECAST-30K.jsonl
+15:47:55 [INFO]   Output             : /Users/gayu/github/uwm_gayu/spring2026/stat453/project/stat-453-constraint-based-llm/datasets/recast_30k_clean.jsonl
+15:47:55 [INFO]   Min prompt length  : 15 words
+15:47:55 [INFO]   Dedup threshold    : 0.85
+15:47:55 [INFO]   Imbalance thresh.  : 0.5
+15:47:55 [INFO]   Prompt field       : 'winner_prompt'
+15:47:55 [INFO]   Response field     : 'response_of_winner_prompt'
+15:47:55 [INFO]   Constraint field   : 'added_constraint'
+15:47:55 [INFO]   langdetect         : ✓
+15:47:55 [INFO]   emoji lib          : ✓
+15:47:55 [INFO]   NLTK stopwords     : ✗ (fallback list)
+15:47:55 [INFO]   MinHash dedup      : ✓
+15:47:55 [INFO]   joblib parallel    : ✓
+15:47:55 [INFO]   n_jobs             : 8
+15:47:55 [INFO] =================================================================
+15:47:55 [INFO] Reading input file: /Users/gayu/github/uwm_gayu/spring2026/stat453/project/stat-453-constraint-based-llm/datasets/RECAST-30K.jsonl
+15:47:56 [INFO]   Loaded 29,939 lines
+15:47:56 [INFO] Cleaning records in parallel (n_jobs=8, backend=loky)…
+[Parallel(n_jobs=8)]: Using backend LokyBackend with 8 concurrent workers.
+[Parallel(n_jobs=8)]: Done   2 tasks      | elapsed:    0.6s
+[Parallel(n_jobs=8)]: Done  96 tasks      | elapsed:    0.8s
+[Parallel(n_jobs=8)]: Done 2112 tasks      | elapsed:    2.5s
+[Parallel(n_jobs=8)]: Done 6144 tasks      | elapsed:    5.5s
+[Parallel(n_jobs=8)]: Done 11328 tasks      | elapsed:    9.6s
+[Parallel(n_jobs=8)]: Done 17664 tasks      | elapsed:   14.5s
+[Parallel(n_jobs=8)]: Done 25152 tasks      | elapsed:   20.3s
+[Parallel(n_jobs=8)]: Done 29924 out of 29939 | elapsed:   24.1s remaining:    0.0s
+[Parallel(n_jobs=8)]: Done 29939 out of 29939 | elapsed:   24.2s finished
+15:48:20 [INFO]   Passed per-record filters: 27,349 / 29,939
+15:48:20 [INFO]     skipped_non_english         :      246
+15:48:20 [INFO]     skipped_too_short           :       37
+15:48:20 [INFO]     skipped_bad_constraint      :    2,307
+15:48:20 [INFO] Computing MinHashes in parallel (n_jobs=8)…
+[Parallel(n_jobs=8)]: Using backend LokyBackend with 8 concurrent workers.
+[Parallel(n_jobs=8)]: Done   2 tasks      | elapsed:    0.5s
+[Parallel(n_jobs=8)]: Done  72 tasks      | elapsed:    0.6s
+[Parallel(n_jobs=8)]: Done 1864 tasks      | elapsed:    1.9s
+[Parallel(n_jobs=8)]: Done 5896 tasks      | elapsed:    5.1s
+[Parallel(n_jobs=8)]: Done 11080 tasks      | elapsed:    9.1s
+[Parallel(n_jobs=8)]: Done 17416 tasks      | elapsed:   13.7s
+[Parallel(n_jobs=8)]: Done 24904 tasks      | elapsed:   19.3s
+[Parallel(n_jobs=8)]: Done 27334 out of 27349 | elapsed:   21.5s remaining:    0.0s
+[Parallel(n_jobs=8)]: Done 27349 out of 27349 | elapsed:   21.5s finished
+15:48:42 [INFO]   Wrote 1,000 records…
+15:48:42 [INFO]   Wrote 2,000 records…
+15:48:42 [INFO]   Wrote 3,000 records…
+15:48:42 [INFO]   Wrote 4,000 records…
+15:48:43 [INFO]   Wrote 5,000 records…
+15:48:43 [INFO]   Wrote 6,000 records…
+15:48:43 [INFO]   Wrote 7,000 records…
+15:48:43 [INFO]   Wrote 8,000 records…
+15:48:43 [INFO]   Wrote 9,000 records…
+15:48:44 [INFO]   Wrote 10,000 records…
+15:48:44 [INFO]   Wrote 11,000 records…
+15:48:44 [INFO]   Wrote 12,000 records…
+15:48:44 [INFO]   Wrote 13,000 records…
+15:48:45 [INFO]   Wrote 14,000 records…
+15:48:45 [INFO]   Wrote 15,000 records…
+15:48:45 [INFO]   Wrote 16,000 records…
+15:48:45 [INFO]   Wrote 17,000 records…
+15:48:45 [INFO]   Wrote 18,000 records…
+15:48:46 [INFO]   Wrote 19,000 records…
+15:48:46 [INFO]   Wrote 20,000 records…
+15:48:46 [INFO]   Wrote 21,000 records…
+15:48:46 [INFO]   Wrote 22,000 records…
+15:48:46 [INFO]   Wrote 23,000 records…
+15:48:47 [INFO]   Wrote 24,000 records…
+15:48:47 [INFO]   Wrote 25,000 records…
+15:48:47 [INFO]   Wrote 26,000 records…
+15:48:47 [INFO]   Wrote 27,000 records…
+15:48:48 [INFO] =================================================================
+15:48:48 [INFO]   CLEANING COMPLETE — Summary
+15:48:48 [INFO] =================================================================
+15:48:48 [INFO]   Total records processed        :   29,939
+15:48:48 [INFO]   Records kept (→ augmentation)  :   27,349  (91.3%)
+15:48:48 [INFO]   Skipped — non-English          :      246
+15:48:48 [INFO]   Skipped — too short            :       37
+15:48:48 [INFO]   Skipped — unprintable          :        0
+15:48:48 [INFO]   Skipped — empty response       :        0
+15:48:48 [INFO]   Skipped — bad constraint       :    2,307
+15:48:48 [INFO]   Skipped — duplicate            :        0
+15:48:48 [INFO]   Skipped — other                :        0
+15:48:48 [INFO] 
+15:48:48 [INFO]   Constraint category distribution (kept records):
+15:48:48 [INFO]     Length               : 26,788  (10.9%)
+15:48:48 [INFO]     Keyword              : 25,494  (10.4%)
+15:48:48 [INFO]     Style                : 20,366  (8.3%)
+15:48:48 [INFO]     Background Info      : 19,814  (8.1%)
+15:48:48 [INFO]     Format               : 18,882  (7.7%)
+15:48:48 [INFO]     Helpfulness          : 17,478  (7.1%)
+15:48:48 [INFO]     Factuality           : 16,759  (6.8%)
+15:48:48 [INFO]     Strat_With           : 16,701  (6.8%)
+15:48:48 [INFO]     End_With             : 15,492  (6.3%)
+15:48:48 [INFO]     Topic                : 15,276  (6.2%)
+15:48:48 [INFO]     Language             : 13,182  (5.4%)
+15:48:48 [INFO]     Example              : 12,163  (5.0%)
+15:48:48 [INFO]     Numerical Constraints : 11,262  (4.6%)
+15:48:48 [INFO]     Tone                 :  6,718  (2.7%)
+15:48:48 [INFO]     Situation            :  4,587  (1.9%)
+15:48:48 [INFO]     Role Playing         :  2,442  (1.0%)
+15:48:48 [INFO]     Emotion              :  2,268  (0.9%)
+15:48:48 [WARNING]   ⚠  'Emotion' under-represented: 2,268 records (0.9% vs expected ≥2.9%)
+15:48:48 [WARNING]   ⚠  'Role Playing' under-represented: 2,442 records (1.0% vs expected ≥2.9%)
+15:48:48 [WARNING]   ⚠  'Situation' under-represented: 4,587 records (1.9% vs expected ≥2.9%)
+15:48:48 [WARNING]   ⚠  'Tone' under-represented: 6,718 records (2.7% vs expected ≥2.9%)
+15:48:48 [INFO] =================================================================
+15:48:48 [INFO]   Output ready for augmentation  : /Users/gayu/github/uwm_gayu/spring2026/stat453/project/stat-453-constraint-based-llm/datasets/recast_30k_clean.jsonl
+15:48:48 [INFO] =================================================================
