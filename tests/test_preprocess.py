@@ -26,6 +26,7 @@ from crllm.dataset.preprocess.preprocess import (
     extract_categories,
     fingerprint,
     is_mostly_printable,
+    normalize_symbols_to_ascii,
     normalize_whitespace,
     remove_html,
     remove_stopwords,
@@ -225,6 +226,67 @@ class TestIsMostlyPrintable:
         assert is_mostly_printable("abcdefghi\x00", threshold=0.85) is True
 
 
+class TestNormalizeSymbolsToAscii:
+    def test_plain_ascii_unchanged(self):
+        assert normalize_symbols_to_ascii("Hello, world!") == "Hello, world!"
+
+    def test_smart_quotes_mapped(self):
+        # U+201C / U+201D → "    U+2018 / U+2019 → '
+        out = normalize_symbols_to_ascii("\u201cHello\u201d he \u2018said\u2019.")
+        assert out == '"Hello" he \'said\'.'
+
+    def test_em_and_en_dash_mapped(self):
+        out = normalize_symbols_to_ascii("range 10\u201320 \u2014 inclusive")
+        assert "\u2013" not in out and "\u2014" not in out
+        assert "10-20" in out and " - " in out
+
+    def test_ellipsis_expanded(self):
+        assert normalize_symbols_to_ascii("wait\u2026really?") == "wait...really?"
+
+    def test_non_breaking_space_to_regular(self):
+        # NBSP (U+00A0) → ASCII space; should NOT be stripped entirely
+        out = normalize_symbols_to_ascii("a\u00a0b")
+        assert out == "a b"
+
+    def test_french_letters_preserved(self):
+        # Accented Latin letters are kept — only symbols are targeted
+        out = normalize_symbols_to_ascii("café naïve résumé façade")
+        assert out == "café naïve résumé façade"
+
+    def test_cyrillic_letters_preserved(self):
+        # Russian letters must pass through untouched
+        out = normalize_symbols_to_ascii("Привет мир")
+        assert out == "Привет мир"
+
+    def test_cjk_letters_preserved(self):
+        out = normalize_symbols_to_ascii("你好世界")
+        assert out == "你好世界"
+
+    def test_arabic_letters_preserved(self):
+        out = normalize_symbols_to_ascii("مرحبا بالعالم")
+        assert "مرحبا" in out and "بالعالم" in out
+
+    def test_non_ascii_symbols_stripped(self):
+        # Arrows, math operators, currency with no ASCII map → dropped
+        out = normalize_symbols_to_ascii("a → b ≠ c € d")
+        assert "→" not in out and "≠" not in out and "€" not in out
+        for letter in "abcd":
+            assert letter in out
+
+    def test_mixed_russian_with_symbols(self):
+        # Russian letters preserved, smart quotes normalised, arrow dropped
+        out = normalize_symbols_to_ascii("\u201cПривет\u201d → мир")
+        assert '"Привет"' in out
+        assert "→" not in out
+        assert "мир" in out
+
+    def test_digits_and_marks_preserved(self):
+        # Arabic-Indic digit and combining mark should not be stripped
+        out = normalize_symbols_to_ascii("year ٢٠٢٤ café")
+        assert "٢٠٢٤" in out
+        assert "café" in out
+
+
 class TestCleanText:
     def test_integration(self):
         raw = "<b>Hello</b>   😀 \x00 world!"
@@ -235,6 +297,18 @@ class TestCleanText:
         # Whitespace collapsed
         assert "  " not in out
         assert "Hello" in out and "world" in out
+
+    def test_integration_preserves_foreign_letters(self):
+        # French + Russian + Chinese all survive the full clean_text chain,
+        # but smart quotes and the arrow symbol around them do not.
+        raw = "<i>\u201ccafé\u201d</i> Привет → 你好"
+        out = clean_text(raw)
+        assert "café" in out
+        assert "Привет" in out
+        assert "你好" in out
+        assert "<i>" not in out
+        assert "\u201c" not in out and "\u201d" not in out
+        assert "→" not in out
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

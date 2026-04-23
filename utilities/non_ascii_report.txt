@@ -1,0 +1,33 @@
+# Non-ASCII audit
+Source : recast_30k_clean.jsonl
+
+Total records scanned                         : 27,349
+Records with any non-ASCII character          : 2,670  (9.8%)
+Total non-ASCII characters across all records : 127,275
+
+## Records per field (records where THIS field contained non-ASCII)
+  winner_prompt                 :   1,236
+  response_of_winner_prompt     :   2,639
+
+## Top 20 non-ASCII characters
+char   codepoint       count  category  name
+'é'    U+00E9        17,750  Ll    LATIN SMALL LETTER E WITH ACUTE
+'ó'    U+00F3        12,156  Ll    LATIN SMALL LETTER O WITH ACUTE
+'í'    U+00ED         6,401  Ll    LATIN SMALL LETTER I WITH ACUTE
+'á'    U+00E1         5,966  Ll    LATIN SMALL LETTER A WITH ACUTE
+'а'    U+0430         2,182  Ll    CYRILLIC SMALL LETTER A
+'о'    U+043E         2,044  Ll    CYRILLIC SMALL LETTER O
+'и'    U+0438         2,009  Ll    CYRILLIC SMALL LETTER I
+'ñ'    U+00F1         1,791  Ll    LATIN SMALL LETTER N WITH TILDE
+'à'    U+00E0         1,777  Ll    LATIN SMALL LETTER A WITH GRAVE
+'ا'    U+0627         1,749  Lo    ARABIC LETTER ALEF
+'е'    U+0435         1,720  Ll    CYRILLIC SMALL LETTER IE
+'è'    U+00E8         1,642  Ll    LATIN SMALL LETTER E WITH GRAVE
+'ú'    U+00FA         1,554  Ll    LATIN SMALL LETTER U WITH ACUTE
+'н'    U+043D         1,533  Ll    CYRILLIC SMALL LETTER EN
+'т'    U+0442         1,438  Ll    CYRILLIC SMALL LETTER TE
+'ä'    U+00E4         1,310  Ll    LATIN SMALL LETTER A WITH DIAERESIS
+'р'    U+0440         1,256  Ll    CYRILLIC SMALL LETTER ER
+'с'    U+0441         1,241  Ll    CYRILLIC SMALL LETTER ES
+'ü'    U+00FC         1,077  Ll    LATIN SMALL LETTER U WITH DIAERESIS
+'ل'    U+0644         1,039  Lo    ARABIC LETTER LAM

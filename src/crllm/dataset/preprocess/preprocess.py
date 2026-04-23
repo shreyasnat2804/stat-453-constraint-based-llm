@@ -18,7 +18,8 @@ Matched to the actual RECAST-30K schema observed in the dataset:
 Full cleaning steps:
   (i)    Language Detection — skip non-English records (check winner_prompt)
   (ii)   HTML tag / entity removal on text fields
-  (iii)  Emoji replacement, unknown / control character removal
+  (iii)  Emoji replacement, unknown / control character removal,
+         non-ASCII symbol → ASCII normalisation (letters kept as-is)
   (iv)   Stopword removal on winner_prompt only (not on response — must stay fluent)
   (v)    Printability + minimum-length quality gate on winner_prompt
   (vi)   Constraint field integrity — added_constraint must be a non-empty dict
@@ -130,6 +131,29 @@ RE_INVISIBLE     = re.compile(
 RE_SURROGATES    = re.compile(r"[\ud800-\udfff]")
 RE_SYMBOL_RUNS   = re.compile(r"[^\w\s]{4,}")
 
+# Curated typographic-symbol → ASCII map. Applied in normalize_symbols_to_ascii.
+# Only symbols with a natural ASCII analog are mapped; all other non-ASCII
+# symbols/punctuation are stripped. Non-ASCII **letters** (French é, Russian Ж,
+# Chinese 好, Arabic ش, etc.) are preserved — handled by Unicode category.
+SYMBOL_ASCII_MAP = {
+    # Smart / curly quotes and guillemets
+    "\u2018": "'", "\u2019": "'", "\u201a": "'", "\u201b": "'",
+    "\u201c": '"', "\u201d": '"', "\u201e": '"', "\u201f": '"',
+    "\u00ab": '"', "\u00bb": '"', "\u2039": "'", "\u203a": "'",
+    # Primes
+    "\u2032": "'", "\u2033": '"', "\u2035": "'", "\u2036": '"',
+    # Dashes and minus
+    "\u2010": "-", "\u2011": "-", "\u2012": "-", "\u2013": "-",
+    "\u2014": "-", "\u2015": "-", "\u2212": "-",
+    # Ellipsis
+    "\u2026": "...",
+    # Bullets and middle dot
+    "\u2022": "*", "\u2023": "*", "\u2043": "-", "\u00b7": ".",
+    # Non-breaking / specialty spaces → regular space
+    "\u00a0": " ", "\u2007": " ", "\u2008": " ", "\u2009": " ",
+    "\u200a": " ", "\u202f": " ", "\u205f": " ", "\u3000": " ",
+}
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SECTION 1 — Text cleaning helpers
@@ -171,6 +195,41 @@ def replace_unknown_chars(text: str) -> str:
     return text
 
 
+def normalize_symbols_to_ascii(text: str) -> str:
+    """
+    Convert non-ASCII symbols/punctuation to ASCII equivalents while
+    preserving letters from any script.
+
+    Policy:
+      * ASCII characters (< 0x80)                → kept unchanged
+      * Common typographic punctuation in
+        SYMBOL_ASCII_MAP (smart quotes, em-dash,
+        ellipsis, non-breaking space, ...)       → replaced with ASCII form
+      * Unicode Letter (L*) / Mark (M*) /
+        Number (N*) — French ñé, Cyrillic Ж,
+        Chinese 好, Arabic ش, Devanagari क, etc.  → kept as-is
+      * Unicode space-separator (Zs)             → collapsed to ' '
+      * Everything else (symbols S*, residual
+        punctuation P*, format/control/etc.)     → dropped
+    """
+    out: list[str] = []
+    for ch in text:
+        if ord(ch) < 0x80:
+            out.append(ch)
+            continue
+        mapped = SYMBOL_ASCII_MAP.get(ch)
+        if mapped is not None:
+            out.append(mapped)
+            continue
+        cat = unicodedata.category(ch)
+        if cat[0] in ("L", "M", "N"):
+            out.append(ch)
+        elif cat == "Zs":
+            out.append(" ")
+        # else: drop
+    return "".join(out)
+
+
 def remove_stopwords(text: str) -> str:
     """
     Strip stopwords token-by-token.
@@ -197,12 +256,15 @@ def is_mostly_printable(text: str, threshold: float = 0.85) -> bool:
 
 def clean_text(text: str) -> str:
     """
-    Apply HTML removal, emoji replacement, and character cleaning.
+    Apply HTML removal, emoji replacement, character cleaning, and
+    non-ASCII symbol → ASCII normalisation. Letters from any script
+    (French, Russian, Chinese, ...) are preserved by design.
     Does NOT apply stopword removal — that is a separate, later step.
     """
     text = remove_html(text)
     text = replace_emojis(text)
     text = replace_unknown_chars(text)
+    text = normalize_symbols_to_ascii(text)
     return normalize_whitespace(text)
 
 

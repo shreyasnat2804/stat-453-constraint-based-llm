@@ -1,0 +1,49 @@
+# Dataset summary
+Source : recast_30k_clean.jsonl
+Size   : 607.1 MB
+
+Total records                               : 27,349
+Total constraint entries (across all records): 375,080
+Mean constraints per record                 : 13.71
+
+## Top-level fields present (count of records where key is present)
+  prompt_winner                   :  27,349
+  winner_prompt                   :  27,349
+  response_winner                 :  27,349
+  winner_response                 :  27,349
+  id                              :  27,349
+  response_of_winner_prompt       :  27,349
+  added_constraint                :  27,349
+  added_constraint_num            :  27,349
+  added_constraint_from_LLM       :  27,349
+  added_constraint_from_rule      :  27,349
+  added_constraint_num_from_LLM   :  27,349
+  added_constraint_num_from_rule  :  27,349
+  rule_evaluate_dict              :  27,349
+
+## Text-field coverage (non-empty)
+  winner_prompt                   :  27,349
+  response_of_winner_prompt       :  27,349
+
+## Word-length distributions
+  winner_prompt                 : min=10  median=106  mean=109.3  max=577
+  response_of_winner_prompt     : min=1  median=220  mean=267.4  max=5207
+
+## Constraint categories (records that use the category)
+  Length              :  26,787  ( 10.9% of category mentions)
+  Keyword             :  25,494  ( 10.4% of category mentions)
+  Style               :  20,366  (  8.3% of category mentions)
+  Background Info     :  19,815  (  8.1% of category mentions)
+  Format              :  18,880  (  7.7% of category mentions)
+  Helpfulness         :  17,479  (  7.1% of category mentions)
+  Factuality          :  16,759  (  6.8% of category mentions)
+  Strat_With          :  16,700  (  6.8% of category mentions)
+  End_With            :  15,491  (  6.3% of category mentions)
+  Topic               :  15,275  (  6.2% of category mentions)
+  Language            :  13,183  (  5.4% of category mentions)
+  Example             :  12,163  (  5.0% of category mentions)
+  Numerical Constraints:  11,260  (  4.6% of category mentions)
+  Tone                :   6,716  (  2.7% of category mentions)
+  Situation           :   4,586  (  1.9% of category mentions)
+  Role Playing        :   2,442  (  1.0% of category mentions)
+  Emotion             :   2,268  (  0.9% of category mentions)
