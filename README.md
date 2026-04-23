@@ -1,4 +1,4 @@
-# stat-453 — Constraint-Based LLM (Team 15)
+# stat-453 Constraint-Based LLM (Team 15)
 
 Course project exploring instruction-following with explicit constraints on
 the RECAST-30K dataset: preprocess the raw corpus, augment it, fine-tune a
@@ -21,7 +21,7 @@ stat-453-constraint-based-llm/
 │   └── evaluation/               ← constraint-checker, LLM-judge, viz
 │
 ├── datasets/                     ← raw + cleaned data (zipped for git)
-├── tests/                        ← pytest tests — one test file per module
+├── tests/                        ← pytest tests , one test file per module
 ├── notebooks/                    ← exploratory notebooks (not for final code)
 ├── utilities/                    ← post-run reports + reusable audit tools
 ├── docs/                         ← proposal + literature notes
@@ -32,7 +32,7 @@ stat-453-constraint-based-llm/
 
 ## Where does new code go?
 
-Please follow the layout below — the `crllm` package is what gets imported
+Please follow the layout below, the `crllm` package is what gets imported
 in tests and notebooks, so library code must stay inside `src/crllm/`.
 
 | If you're adding… | Put it in… |
@@ -47,10 +47,10 @@ in tests and notebooks, so library code must stay inside `src/crllm/`.
 | A Jupyter notebook | `notebooks/` (not for shipped code) |
 
 **Don't:**
-- Put `.py` modules at the repo root — they won't be importable as `crllm.*`.
-- Drop raw data into `src/` — data goes in `datasets/`.
-- Mix notebooks with library code — keep notebooks in `notebooks/`.
-- Commit unzipped JSONL datasets > 50 MB — zip them (see `datasets/*.zip`).
+- Put `.py` modules at the repo root , they won't be importable as `crllm.*`.
+- Drop raw data into `src/` , data goes in `datasets/`.
+- Mix notebooks with library code , keep notebooks in `notebooks/`.
+- Commit unzipped JSONL datasets > 50 MB , zip them (see `datasets/*.zip`).
 
 ---
 
@@ -67,12 +67,12 @@ bash src/crllm/dataset/preprocess/run_preprocess.sh
 PYTHONPATH=src python -m pytest tests/ -v
 
 # Post-cleaning audits
-python utilities/count_non_ascii_records.py --input datasets/recast_30k_clean.jsonl
-python utilities/dataset_summary.py        --input datasets/recast_30k_clean.jsonl
+python utilities/count_non_ascii_records.py -input datasets/recast_30k_clean.jsonl
+python utilities/dataset_summary.py        -input datasets/recast_30k_clean.jsonl
 ```
 
 Each subpackage (`preprocess/`, `evaluation/`, `clustering/`, ...) has its
-own `README.md` covering usage and arguments — read those before modifying
+own `README.md` covering usage and arguments , read those before modifying
 that stage's code.
 
 ---
