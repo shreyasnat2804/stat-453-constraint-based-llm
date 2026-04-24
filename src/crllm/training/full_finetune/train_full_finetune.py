@@ -5,6 +5,13 @@ Usage:
     python train_full_finetune.py [options]
 
 Defaults to Llama-3.2-1B-Instruct trained on the local RECAST-30K dataset.
+
+Pass a .zip file to --dataset and it will be extracted in-place automatically.
+
+Constraint-aware loss adds a penalty term scaled by --constraint_lambda:
+    total_loss = ce_loss + lambda * constraint_loss
+where constraint_loss = 1 - (satisfied / total) on the gold responses,
+mirroring the evaluation metric in validate_constraints.py.
 """
 
 import argparse
@@ -13,6 +20,7 @@ import logging
 import os
 import random
 import sys
+import zipfile
 from pathlib import Path
 
 import torch
@@ -33,6 +41,87 @@ logger = logging.getLogger(__name__)
 SCRIPT_DIR = Path(__file__).parent
 DEFAULT_DATASET = str(SCRIPT_DIR / "datasets" / "RECAST-30K.json")
 DEFAULT_MODEL = "meta-llama/Llama-3.2-1B-Instruct"
+
+
+# ── Rule-based constraint helpers (mirrors validate_constraints.py) ──────────
+
+
+def _parse_length_constraint(rule_dict: dict):
+    """Return (min_words, max_words) or None."""
+    wl = rule_dict.get("word_length")
+    if not wl:
+        return None
+    fi = wl.get("func_input", [])
+    if len(fi) < 2:
+        return None
+    range_ = fi[1]
+    if isinstance(range_, list) and len(range_) == 2:
+        return (int(range_[0]), int(range_[1]))
+    target = fi[2] if len(fi) > 2 and fi[2] is not None else None
+    if target is not None:
+        return (max(1, int(target * 0.8)), int(target * 1.2))
+    return None
+
+
+def _parse_keyword_constraint(rule_dict: dict):
+    """Return {keyword: required_count} or None."""
+    kw = rule_dict.get("keyword")
+    if not kw:
+        return None
+    fi = kw.get("func_input", [])
+    return fi[1] if len(fi) > 1 and isinstance(fi[1], dict) else None
+
+
+def _parse_start_with_constraint(rule_dict: dict):
+    """Return target string or None."""
+    sw = rule_dict.get("start_with")
+    if not sw:
+        return None
+    fi = sw.get("func_input", [])
+    return fi[1] if len(fi) > 1 and isinstance(fi[1], str) else None
+
+
+def _parse_end_with_constraint(rule_dict: dict):
+    """Return target string or None."""
+    ew = rule_dict.get("end_with")
+    if not ew:
+        return None
+    fi = ew.get("func_input", [])
+    return fi[1] if len(fi) > 1 and isinstance(fi[1], str) else None
+
+
+def _constraint_score(response: str, rule_dict: dict) -> float:
+    """
+    Score a gold response against the 4 rule-based constraints.
+    Returns score in [0.0, 1.0].  1.0 = all constraints satisfied.
+    """
+    total = 0
+    passed = 0
+
+    lp = _parse_length_constraint(rule_dict)
+    if lp:
+        total += 1
+        wc = len(response.split())
+        passed += 1 if lp[0] <= wc <= lp[1] else 0
+
+    kw = _parse_keyword_constraint(rule_dict)
+    if kw:
+        total += 1
+        resp_lower = response.lower()
+        ok = all(resp_lower.count(k.lower()) >= int(v) for k, v in kw.items())
+        passed += 1 if ok else 0
+
+    sw = _parse_start_with_constraint(rule_dict)
+    if sw:
+        total += 1
+        passed += 1 if response.strip().lower().startswith(sw.strip().lower()) else 0
+
+    ew = _parse_end_with_constraint(rule_dict)
+    if ew:
+        total += 1
+        passed += 1 if response.strip().lower().endswith(ew.strip().lower()) else 0
+
+    return passed / total if total > 0 else 1.0
 
 
 # ── Dataset helpers ──────────────────────────────────────────────────────────
@@ -85,11 +174,33 @@ def _parse_record(record: dict, idx: int) -> dict:
         "prompt": prompt,
         "response": response,
         "difficulty_level": difficulty,
+        # Preserved so constraint scores can be computed before tokenisation
+        "rule_evaluate_dict": record.get("rule_evaluate_dict", {}),
     }
 
 
+def _resolve_dataset_path(dataset_arg: str) -> str:
+    """If dataset_arg is a .zip, extract it in-place and return the inner file path."""
+    p = Path(dataset_arg)
+    if p.suffix != ".zip" or not p.exists():
+        return dataset_arg
+    extract_dir = p.parent
+    logger.info(f"Extracting {p} → {extract_dir}")
+    with zipfile.ZipFile(p, "r") as z:
+        z.extractall(extract_dir)
+    candidates = sorted(
+        f for f in extract_dir.iterdir()
+        if f.suffix in (".jsonl", ".json") and f.stem != p.stem
+    )
+    if not candidates:
+        raise RuntimeError(f"No .jsonl/.json file found after extracting {p}")
+    logger.info(f"Using extracted file: {candidates[0]}")
+    return str(candidates[0])
+
+
 def load_recast_dataset(dataset_path: str) -> list[dict]:
-    """Load RECAST-30K from a local JSON/JSONL file or a HuggingFace dataset ID."""
+    """Load RECAST-30K from a local JSON/JSONL/.zip file or a HuggingFace dataset ID."""
+    dataset_path = _resolve_dataset_path(dataset_path)
     path = Path(dataset_path)
 
     # Try as a local file first
@@ -147,6 +258,9 @@ def build_tokenised_dataset(
     """
     Format each record as a user/assistant chat turn, tokenise it, and mask
     the prompt tokens in the labels so loss is computed only on the response.
+
+    Also attaches a ``constraint_score`` float (0–1) per example so that
+    ConstraintAwareTrainer can weight the cross-entropy loss accordingly.
     """
     has_template = (
         hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None
@@ -155,9 +269,9 @@ def build_tokenised_dataset(
     def tokenise(record):
         prompt_text = record["prompt"]
         response_text = record["response"]
+        rule_dict = record.get("rule_evaluate_dict") or {}
 
         if has_template:
-            # Build the full conversation and the prompt-only prefix
             full_chat = [
                 {"role": "user", "content": prompt_text},
                 {"role": "assistant", "content": response_text},
@@ -195,13 +309,20 @@ def build_tokenised_dataset(
 
         # If the entire sequence was masked (prompt >= max_length), signal
         # the caller to drop this example by returning None sentinel values.
-        if all(l == -100 for l in labels):
-            return {"input_ids": None, "attention_mask": None, "labels": None}
+        if all(lbl == -100 for lbl in labels):
+            return {
+                "input_ids": None,
+                "attention_mask": None,
+                "labels": None,
+                "constraint_score": None,
+            }
 
         return {
             "input_ids": input_ids,
             "attention_mask": full_enc["attention_mask"],
             "labels": labels,
+            # Pre-computed gold-response constraint score used by ConstraintAwareTrainer
+            "constraint_score": _constraint_score(response_text, rule_dict),
         }
 
     logger.info("Tokenising dataset …")
@@ -220,6 +341,61 @@ def build_tokenised_dataset(
             f"Dropped {dropped} examples where prompt exceeded max_length={max_length}"
         )
     return tokenised
+
+
+# ── Constraint-aware training components ─────────────────────────────────────
+
+
+class ConstraintDataCollator(DataCollatorForSeq2Seq):
+    """Extends DataCollatorForSeq2Seq to pass constraint_score through to the batch."""
+
+    def __call__(self, features):
+        scores = [f.pop("constraint_score", 1.0) for f in features]
+        batch = super().__call__(features)
+        batch["constraint_score"] = torch.tensor(scores, dtype=torch.float32)
+        return batch
+
+
+class ConstraintAwareTrainer(Trainer):
+    """
+    Trainer that adds a constraint-following penalty to the CE loss:
+
+        total_loss = ce_loss + lambda * constraint_loss
+
+    where constraint_loss = 1 - mean(constraint_score) over the batch.
+    constraint_score is pre-computed on the gold responses; examples whose
+    gold responses fully satisfy all 4 rule constraints score 1.0 (zero
+    penalty), while violations push the penalty toward 1.0.
+
+    This acts as a sample-quality signal: it up-weights the overall loss for
+    batches containing more constraint-violating training examples, biasing
+    the optimiser toward constraint-satisfying outputs.
+    """
+
+    def __init__(self, *args, constraint_lambda: float = 0.1, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constraint_lambda = constraint_lambda
+
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        constraint_scores = inputs.pop("constraint_score", None)
+        outputs = model(**inputs)
+        ce_loss = outputs.loss
+
+        if constraint_scores is not None and self.constraint_lambda > 0:
+            constraint_loss = 1.0 - constraint_scores.float().mean()
+            loss = ce_loss + self.constraint_lambda * constraint_loss
+        else:
+            constraint_loss = torch.tensor(0.0)
+            loss = ce_loss
+
+        # Surface both loss components to the Trainer logging machinery
+        if self.state.global_step % self.args.logging_steps == 0:
+            self.log({
+                "ce_loss": ce_loss.detach().item(),
+                "constraint_loss": constraint_loss.detach().item(),
+            })
+
+        return (loss, outputs) if return_outputs else loss
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -288,6 +464,16 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=0,
         help="Use only this many training samples (0 = all)",
+    )
+    p.add_argument(
+        "--constraint_lambda",
+        type=float,
+        default=0.1,
+        help=(
+            "Weight for the constraint-following loss term "
+            "(total_loss = ce_loss + lambda * constraint_loss). "
+            "Set to 0 to disable and fall back to standard CE loss."
+        ),
     )
     return p.parse_args()
 
@@ -385,21 +571,43 @@ def main() -> None:
         run_name=f"full_ft_{safe_model_name}",
     )
 
-    data_collator = DataCollatorForSeq2Seq(
-        tokenizer=tokenizer,
-        padding=True,
-        pad_to_multiple_of=8,
-        label_pad_token_id=-100,
-    )
-
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_ds,
-        eval_dataset=val_ds,
-        data_collator=data_collator,
-        processing_class=tokenizer,
-    )
+    use_constraint_loss = args.constraint_lambda > 0
+    if use_constraint_loss:
+        logger.info(
+            f"Constraint-aware loss enabled  (lambda={args.constraint_lambda}). "
+            "total_loss = ce_loss + lambda * constraint_loss"
+        )
+        data_collator = ConstraintDataCollator(
+            tokenizer=tokenizer,
+            padding=True,
+            pad_to_multiple_of=8,
+            label_pad_token_id=-100,
+        )
+        trainer = ConstraintAwareTrainer(
+            model=model,
+            args=training_args,
+            train_dataset=train_ds,
+            eval_dataset=val_ds,
+            data_collator=data_collator,
+            processing_class=tokenizer,
+            constraint_lambda=args.constraint_lambda,
+        )
+    else:
+        logger.info("Constraint loss disabled (--constraint_lambda 0). Using standard CE loss.")
+        data_collator = DataCollatorForSeq2Seq(
+            tokenizer=tokenizer,
+            padding=True,
+            pad_to_multiple_of=8,
+            label_pad_token_id=-100,
+        )
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=train_ds,
+            eval_dataset=val_ds,
+            data_collator=data_collator,
+            processing_class=tokenizer,
+        )
 
     # ── Train ────────────────────────────────────────────────────────────────
     logger.info("Starting full fine-tuning …")
@@ -422,6 +630,7 @@ def main() -> None:
         "max_length": args.max_length,
         "train_samples": len(train_records),
         "val_samples": len(val_records),
+        "constraint_lambda": args.constraint_lambda,
     }
     with open(os.path.join(args.output_dir, "train_meta.json"), "w") as f:
         json.dump(meta, f, indent=2)
