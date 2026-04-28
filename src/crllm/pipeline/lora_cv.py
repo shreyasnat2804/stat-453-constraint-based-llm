@@ -375,22 +375,39 @@ def run_kfold(
     for fold_num, (train_idx, test_idx) in enumerate(kf.split(indices), start=1):
         print(f"\n{'='*60}\n  FOLD {fold_num}/{k}\n{'='*60}")
 
-        train_recs = [records[indices[i]] for i in train_idx]
-        eval_pool = [records[indices[i]] for i in test_idx]
-        if eval_per_fold and len(eval_pool) > eval_per_fold:
-            eval_recs = rng.sample(eval_pool, eval_per_fold)
-        else:
-            eval_recs = eval_pool
-
-        print(f"  train={len(train_recs)}  eval={len(eval_recs)}")
-
         fold_dir = output_root / f"fold_{fold_num}"
-        adapter_path = train_lora_on_fold(
-            train_recs, output_dir=fold_dir, seed=seed, **train_kwargs
-        )
-        per_record = evaluate_adapter_on_fold(
-            adapter_path, eval_recs, **eval_kwargs
-        )
+        fold_dir.mkdir(parents=True, exist_ok=True)
+        results_file = fold_dir / "results.json"
+        adapter_path = fold_dir / "lora_adapter"
+
+        # Resume: skip fully-completed folds
+        if results_file.exists():
+            print(f"  ✓ resuming — found {results_file}, skipping train+eval")
+            with open(results_file) as f:
+                per_record = json.load(f)
+        else:
+            train_recs = [records[indices[i]] for i in train_idx]
+            eval_pool = [records[indices[i]] for i in test_idx]
+            if eval_per_fold and len(eval_pool) > eval_per_fold:
+                eval_recs = rng.sample(eval_pool, eval_per_fold)
+            else:
+                eval_recs = eval_pool
+
+            print(f"  train={len(train_recs)}  eval={len(eval_recs)}")
+
+            # Resume: skip training if adapter already saved (eval crashed previously)
+            if (adapter_path / "adapter_config.json").exists():
+                print(f"  ✓ resuming — found adapter at {adapter_path}, skipping training")
+            else:
+                train_lora_on_fold(
+                    train_recs, output_dir=fold_dir, seed=seed, **train_kwargs
+                )
+
+            per_record = evaluate_adapter_on_fold(
+                str(adapter_path), eval_recs, **eval_kwargs
+            )
+            with open(results_file, "w") as f:
+                json.dump(per_record, f, indent=2)
 
         fold_csr = sum(r["csr"] for r in per_record) / max(len(per_record), 1)
         print(f"  fold {fold_num} mean CSR = {fold_csr:.4f}")
@@ -398,9 +415,6 @@ def run_kfold(
         fold_scores.append({"fold": fold_num, "csr": fold_csr, "n": len(per_record)})
         for r in per_record:
             all_results.append({"fold": fold_num, **r})
-
-        with open(fold_dir / "results.json", "w") as f:
-            json.dump(per_record, f, indent=2)
 
     final_score = sum(f["csr"] for f in fold_scores) / max(len(fold_scores), 1)
     summary = {
