@@ -14,6 +14,7 @@ import re
 import random
 
 try:
+    import torch
     from transformers import MarianMTModel, MarianTokenizer
     HAS_TRANSFORMERS = True
 except ImportError:
@@ -73,13 +74,16 @@ def load_translation_models(intermediate_lang: str = "de") -> tuple:
     fwd_name = f"Helsinki-NLP/opus-mt-en-{intermediate_lang}"
     bwd_name = f"Helsinki-NLP/opus-mt-{intermediate_lang}-en"
 
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    logger.info("Translation models will run on device: %s", device)
+
     logger.info("Loading forward model: %s", fwd_name)
     fwd_tokenizer = MarianTokenizer.from_pretrained(fwd_name)
-    fwd_model = MarianMTModel.from_pretrained(fwd_name)
+    fwd_model = MarianMTModel.from_pretrained(fwd_name).to(device).eval()
 
     logger.info("Loading backward model: %s", bwd_name)
     bwd_tokenizer = MarianTokenizer.from_pretrained(bwd_name)
-    bwd_model = MarianMTModel.from_pretrained(bwd_name)
+    bwd_model = MarianMTModel.from_pretrained(bwd_name).to(device).eval()
 
     return fwd_model, fwd_tokenizer, bwd_model, bwd_tokenizer
 
@@ -112,8 +116,9 @@ def translate_batch(
         padding=True,
         truncation=True,
         max_length=max_length,
-    )
-    translated_ids = model.generate(**encoded, max_length=max_length)
+    ).to(model.device)
+    with torch.no_grad():
+        translated_ids = model.generate(**encoded, max_length=max_length)
     decoded = tokenizer.batch_decode(translated_ids, skip_special_tokens=True)
 
     results = [""] * len(texts)
@@ -268,21 +273,28 @@ def run_back_translation_pipeline(
     prompt_fields = [detect_prompt_field(r) for r in records]
     prompts = [r[pf] for r, pf in zip(records, prompt_fields)]
 
+    n_batches = (len(prompts) + batch_size - 1) // batch_size
+    log_every = max(1, n_batches // 20)  # ~20 progress updates per pass
+
     # Batch translate: forward pass
     intermediate_texts: list[str] = []
-    for i in range(0, len(prompts), batch_size):
+    for bi, i in enumerate(range(0, len(prompts), batch_size)):
         batch = prompts[i : i + batch_size]
         intermediate_texts.extend(
             translate_batch(batch, fwd_model, fwd_tok, max_length)
         )
+        if bi % log_every == 0 or bi == n_batches - 1:
+            logger.info("  forward %d/%d batches", bi + 1, n_batches)
 
     # Batch translate: backward pass
     back_translated: list[str] = []
-    for i in range(0, len(intermediate_texts), batch_size):
+    for bi, i in enumerate(range(0, len(intermediate_texts), batch_size)):
         batch = intermediate_texts[i : i + batch_size]
         back_translated.extend(
             translate_batch(batch, bwd_model, bwd_tok, max_length)
         )
+        if bi % log_every == 0 or bi == n_batches - 1:
+            logger.info("  backward %d/%d batches", bi + 1, n_batches)
 
     # Build augmented records with verification
     augmented_count = 0
