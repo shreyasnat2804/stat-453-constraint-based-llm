@@ -57,7 +57,7 @@
 \vspace{9pt}
 {\normalsize
   Shreyas Natarajan \quad
-  Fnu Rinkle Rose Renny \quad
+  Rinkle Rose Renny \quad
   Mark Aashish Lnu \quad
   Gayathri Ethiraj\par}
 \vspace{4pt}
@@ -70,10 +70,9 @@
 \begin{quotation}\small
 Small language models ($\sim$1B parameters) offer practical advantages in
 cost and inference speed yet consistently underperform on multi-constraint
-instruction-following tasks. We present an end-to-end pipeline---9-stage
-data preprocessing and augmentation (30K $\to$ $\sim$90K examples),
+instruction-following tasks. We present an end-to-end pipeline which includes data preprocessing,
 supervised fine-tuning via full parameter updates and LoRA, hybrid
-rule-based and LLM-judge evaluation, and 5-fold cross-validation---to
+rule-based and LLM-judge evaluation, and 5-fold cross-validation to
 quantify and improve constraint-following in 1B-parameter models using the
 RECAST-30K dataset~\cite{guo2025recast}. Evaluating Llama 3.2 1B Instruct,
 the zero-shot baseline achieves a Hard Constraint Satisfaction Rate (CSR)
@@ -92,9 +91,9 @@ reach near-perfect pass rates after LoRA training.
 % ----------------------------------------------------------------
 
 Large language models are powerful but expensive to deploy at scale.
-Models in the 1--2B parameter range offer substantially lower compute cost
+Models in the 1B-2B parameter range offer substantially lower compute cost
 and faster inference latency, yet they struggle with
-\textit{constraint-following}: simultaneously satisfying explicit
+\textit{constraint-following}, simultaneously satisfying explicit
 requirements on format, length, tone, style, keywords, and structure
 imposed by a prompt. This difficulty compounds as the number of
 simultaneous constraints grows, a setting that directly mirrors
@@ -104,23 +103,18 @@ constrained marketing copy, or generating formatted API responses.
 Benchmarks such as IFEval~\cite{zhou2023ifeval} and
 FollowBench~\cite{jiang2024followbench} have documented these failures
 comprehensively. As a reference point, Llama-3.2-3B achieves only
-$\sim$77.4\% prompt-strict accuracy on IFEval; the 1B variant is weaker
-still. The RECAST framework~\cite{guo2025recast} addresses the data side
+$\sim$77.4\% prompt-strict accuracy on IFEval. The RECAST framework~\cite{guo2025recast} addresses the data side
 by synthesizing multi-constraint training sets with automated validators
 enabling fine-grained, constraint-level supervision. RECAST fine-tuning at
-7--8B scale outperforms much larger instruct-tuned models, but behavior at
-1B scale is unexplored. Separately, LoRA~\cite{hu2022lora} and full
+7B-8B scale outperforms much larger instruct-tuned models, but behavior at
+1B scale remains untested. LoRA~\cite{hu2022lora} and full
 fine-tuning have been studied for reasoning and code tasks, but not
 specifically for constraint-following~\cite{shuttleworth2024lora}.
 
 \textbf{Research questions.} This project addresses three open questions:
 \begin{enumerate}
-  \item Can RECAST-based fine-tuning meaningfully improve
-        constraint-following in 1B-parameter models?
-  \item Does full fine-tuning outperform LoRA, or do low-rank updates
-        suffice?
-  \item Which constraint categories benefit most, and which remain
-        difficult?
+  \item Can RECAST-based fine-tuning meaningfully improve constraint-following in 1B-parameter models?
+  \item Does full fine-tuning outperform LoRA, or do low-rank updates suffice?
 \end{enumerate}
 
 % ----------------------------------------------------------------
@@ -139,9 +133,9 @@ Guo et al.~\cite{guo2025recast} propose a constraint back-translation
 framework that synthesizes multi-constraint training data by extracting
 constraints from existing high-quality responses and injecting them back
 into prompts, guaranteeing physical achievability. Every constraint has an
-automated validator, enabling fine-grained training signal. At 7B--8B
-scales, RECAST outperforms larger instruct-tuned models; behavior at 1B
-parameters is unexplored.
+automated validator, enabling fine-grained training signal. At 7B-8B
+scales, RECAST outperforms larger instruct-tuned models and behavior at 1B
+parameters has not been tested.
 
 \textbf{LoRA vs.\ full fine-tuning.}
 Hu et al.~\cite{hu2022lora} introduced Low-Rank Adaptation, which freezes
@@ -149,7 +143,7 @@ the base model and injects trainable rank-$r$ matrices into attention
 projections, training only $\sim$0.5\% of parameters. Shuttleworth et
 al.~\cite{shuttleworth2024lora} show that full fine-tuning adjusts existing
 singular vectors more conservatively while LoRA introduces ``intruder
-dimensions'' that can accelerate catastrophic forgetting---but this
+dimensions'' that can accelerate catastrophic forgetting, but this
 analysis targets reasoning and code tasks. Whether these dynamics hold for
 constraint-following remains open. Table~\ref{tab:lora_vs_ft} summarizes
 the practical tradeoffs.
@@ -172,11 +166,7 @@ Forgetting risk   & Lower            & Higher          \\
 \end{tabular}
 \end{table}
 
-\textbf{Instruction-tuning data.}
-The Tulu corpus~\cite{ivison2023tulu} assembles diverse
-instruction-following examples from FLAN, ShareGPT, OpenAssistant, and
-other sources, providing broad coverage needed to prevent catastrophic
-forgetting when fine-tuning on the narrower RECAST constraint distribution.
+
 
 % ----------------------------------------------------------------
 \section{Dataset and Preprocessing}
@@ -788,7 +778,7 @@ SmolLM2 1.7B.
 
 \textbf{Mark Aashish Lnu:}  Conducted dataset clustering analysis, implemented the modular ConstraintChecker (18 constraint types), built the full fine-tuning pipeline with the constraint-aware loss, established the 5-fold cross-validation framework.
 
-\textbf{Fnu Rinkle Rose Renny:} Built the LoRA fine-tuning pipeline, contributed to the 5-fold cross-validation framework, designed evaluation visualizations, and led per-constraint analysis and result interpretation.
+\textbf{Rinkle Rose Renny:} Built the LoRA fine-tuning pipeline, contributed to the 5-fold cross-validation framework, designed evaluation visualizations, and led per-constraint analysis and result interpretation.
 
 % ----------------------------------------------------------------
 \begin{thebibliography}{9}
