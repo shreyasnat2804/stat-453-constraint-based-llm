@@ -718,8 +718,7 @@ well-represented in the training data.
 The custom penalty $(1-s/\text{total})$, while conceptually intuitive,
 encountered gradient computation issues during backpropagation. Standard
 cross-entropy over constraint-satisfying gold responses proved more
-effective, as CE is a differentiable probabilistic surrogate well-suited to
-the teacher-forcing paradigm.
+effective, as CE is a differentiable function. 
 
 \subsection{Design Decisions}
 
@@ -728,8 +727,8 @@ editing and back-translation helps LoRA generalize beyond exact phrasings
 while preserving constraint semantics.
 
 \textbf{5-fold CV.} The low fold-to-fold LoRA variance (CSR range:
-79.67-80.50\%) demonstrates robustness. The higher variance for full FT
-(30.4-36.6\%) suggests full FT is more sensitive to training partition.
+79.67--80.50\%) demonstrates robustness. The higher variance for full FT
+(30.4--36.6\%) suggests full FT is more sensitive to training partition.
 
 \textbf{Prompt masking.} Masking prompt tokens ensures CE loss is computed
 only over the response, preventing gradient dilution from the long
@@ -740,8 +739,8 @@ constraint specifications embedded in RECAST prompts.
   \item \textbf{Model scale.} Resource constraints limited primary
         experiments to Llama 3.2 1B; the proposal targeted four 1--2B
         models. Conclusions about scale sensitivity are preliminary.
-  \item \textbf{Compute cost.} Full FT required $\sim$4.5 hr/fold on A100,
-        limiting hyperparameter exploration.
+  \item \textbf{Compute cost.} Given the student Google Colab tier of 200 compute units per month, we could not use the entire 90K augmented data points but rather only the 30K. Full FT required $\sim$4.5 hr/fold on A100,
+        limiting hyperparameter exploration, and LoRA required $\sim$0.5 hr/fold. A100 chips use $\sim$7.25 CU/hr.
   \item \textbf{Evaluation coverage.} The deterministic evaluator covers
         only 4 of 15+ constraint categories; the LLM judge adds inference
         cost and may introduce systematic bias (7B judge evaluating 1B
@@ -787,7 +786,7 @@ SmolLM2 1.7B.
 
 \textbf{Shreyas Natarajan:} Developed the back-translation and lexical editing augmentation strategies, contributed to overall system integration, and led training execution, result analysis, and visualization.
 
-\textbf{Mark Aashish Lnu:}  conducted dataset clustering analysis, implemented the modular ConstraintChecker (18 constraint types), built the full fine-tuning pipeline with the constraint-aware loss, established the 5-fold cross-validation framework.
+\textbf{Mark Aashish Lnu:}  Conducted dataset clustering analysis, implemented the modular ConstraintChecker (18 constraint types), built the full fine-tuning pipeline with the constraint-aware loss, established the 5-fold cross-validation framework.
 
 \textbf{Fnu Rinkle Rose Renny:} Built the LoRA fine-tuning pipeline, contributed to the 5-fold cross-validation framework, designed evaluation visualizations, and led per-constraint analysis and result interpretation.
 
