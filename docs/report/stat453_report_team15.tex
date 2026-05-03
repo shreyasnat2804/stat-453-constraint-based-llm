@@ -97,7 +97,7 @@ and faster inference latency, yet they struggle with
 \textit{constraint-following}: simultaneously satisfying explicit
 requirements on format, length, tone, style, keywords, and structure
 imposed by a prompt. This difficulty compounds as the number of
-simultaneous constraints grows---a setting that directly mirrors
+simultaneous constraints grows, a setting that directly mirrors
 real-world scenarios such as drafting structured reports, composing
 constrained marketing copy, or generating formatted API responses.
 
@@ -184,17 +184,16 @@ forgetting when fine-tuning on the narrower RECAST constraint distribution.
 
 \subsection{RECAST-30K}
 The RECAST-30K dataset provides multi-constraint instruction--response
-pairs covering 15 constraint categories (Style, Topic, Length, Keyword,
-End\_With, Start\_With, Language, Format, Tone, Role-Playing, Numerical,
+pairs covering 15 constraint categories (Style, Topic, Length, Keyword, Language, Format, Tone, End\_With, Start\_With, Role-Playing, Numerical,
 etc.) with an average of $\sim$13.4 constraints per instruction and 90.1\%
 human annotator agreement. Each record contains:
 \begin{itemize}
-  \item \texttt{winner\_prompt} --- the multi-constraint instruction;
-  \item \texttt{response\_of\_winner\_prompt} --- a constraint-satisfying
+  \item \texttt{winner\_prompt} ,  the multi-constraint instruction;
+  \item \texttt{response\_of\_winner\_prompt} ,  a constraint-satisfying
         gold response;
-  \item \texttt{added\_constraint} --- dict mapping category to
+  \item \texttt{added\_constraint} ,  dict mapping category to
         constraint descriptions;
-  \item \texttt{rule\_evaluate\_dict} --- structured validator parameters
+  \item \texttt{rule\_evaluate\_dict} ,  structured validator parameters
         (word length bounds, required keywords, start/end strings).
 \end{itemize}
 
@@ -220,7 +219,7 @@ The raw JSONL passes through a nine-stage pipeline:
   \item \textbf{Augmentation.} Two techniques expand cleaned $\sim$30K
         records to $\sim$90K: \textit{lexical editing} via synonym
         replacement ($+{\sim}30$K) and \textit{back-translation} via
-        English$\to$German$\to$English round-trip ($+{\sim}30$K).
+        \\English$\to$German$\to$English round-trip ($+{\sim}30$K).
 \end{enumerate}
 A post-cleaning distribution audit flags categories below 50\% of the
 expected uniform share. The pipeline runs in parallel with 8 workers.
@@ -240,7 +239,7 @@ Each record is formatted as a user/assistant chat turn via the Llama-3
 chat template; prompt tokens are masked (\texttt{labels}$=-100$) so loss
 is computed only on the response.
 
-\textbf{Loss.} Standard cross-entropy over response tokens. An earlier
+\textbf{Loss:} Standard cross-entropy over response tokens. An earlier
 custom penalty $(1 - s/\text{total})$ encountered backpropagation
 difficulties; CE loss provided stable gradient-based optimization and is a
 principled probabilistic training objective under teacher forcing.
@@ -308,7 +307,7 @@ plain-English constraint descriptions and outputs a JSON verdict.
 \begin{align}
   \text{CSR}^{(i)} &= \frac{\text{constraints satisfied in example } i}
                           {\text{constraints checked in example } i} \\
-  \text{Hard CSR}  &= \mathbb{1}[\text{all checked constraints satisfied}]
+  \text{Hard CSR}  &= \text{all checked constraints satisfied}
 \end{align}
 The standalone \texttt{ConstraintChecker} class dispatches across 18
 constraint types in 8 categories: length, keywords, structural,
@@ -342,7 +341,7 @@ Transformer). Secondary (exploratory runs): Qwen 2.5 1.5B Instruct.
 \midrule
 LoRA (r=8)   & $\sim$7--9\,GB   & 2--4\,hr    & 81,500 \\
 Full FT       & $\sim$16--20\,GB & 4.5--8\,hr  & 1.24B  \\
-LLM judge (7B)& $\sim$14\,GB    & 30\,min/500 & ---    \\
+LLM judge (7B)& $\sim$14\,GB    & 30\,min/500 & 7B     \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -509,7 +508,7 @@ split.
   enlarge x limits=0.06,
   error bars/y dir=both,
   error bars/y explicit,
-  title={LoRA Per-Constraint CSR --- Mean $\pm$ Std Across 5 Folds
+  title={LoRA Per-Constraint CSR ,  Mean $\pm$ Std Across 5 Folds
     ($r{=}8$, lr$=10^{-4}$, Llama-3.2-1B)},
   title style={font=\small},
 ]
@@ -651,7 +650,7 @@ Full FT per-constraint breakdown was not captured at evaluation time.}
   & \textbf{Start PR} \\
 \midrule
 Baseline         & 28.9\%         & 32.0\% & 40.0\% & 56.5\% \\
-Full FT          & 33.2\%         & ---    & ---    & ---    \\
+Full FT          & 33.2\%         & -    & -    & -    \\
 LoRA ($r{=}8$)   & \textbf{80.0\%}& 39.2\% & 72.7\% & 58.3\% \\
 \bottomrule
 \end{tabular}
@@ -706,7 +705,7 @@ projections to constraint-following patterns.
 Despite a $+$7.2 pp gain (baseline 32.0\% $\to$ LoRA 39.2\%), word-count
 adherence remains below 40\%. The model must maintain an accurate running
 count of generated tokens while simultaneously satisfying other constraints
-and producing coherent text---a form of explicit bookkeeping that is
+and producing coherent text, a form of explicit bookkeeping that is
 difficult to learn from sequence-level supervision alone.
 
 \textbf{Structural and qualitative constraints saturate.}
@@ -729,8 +728,8 @@ editing and back-translation helps LoRA generalize beyond exact phrasings
 while preserving constraint semantics.
 
 \textbf{5-fold CV.} The low fold-to-fold LoRA variance (CSR range:
-79.67--80.50\%) demonstrates robustness. The higher variance for full FT
-(30.4--36.6\%) suggests full FT is more sensitive to training partition.
+79.67-80.50\%) demonstrates robustness. The higher variance for full FT
+(30.4-36.6\%) suggests full FT is more sensitive to training partition.
 
 \textbf{Prompt masking.} Masking prompt tokens ensures CE loss is computed
 only over the response, preventing gradient dilution from the long
@@ -784,24 +783,13 @@ SmolLM2 1.7B.
 \section*{Team Contributions}
 % ----------------------------------------------------------------
 
-\textbf{Shreyas Natarajan:} Dataset preprocessing pipeline design and
-implementation (stages 1--8); constraint integrity validation; pipeline
-parallelization; overall system integration and evaluation framework.
+\textbf{Gayathri Ethiraj:} Designed and implemented the complete 8-stage dataset preprocessing pipeline, including constraint integrity validation and near-deduplication via MinHash LSH, and led overall system integration and the evaluation framework.
 
-\textbf{Fnu Rinkle Rose Renny:} Back-translation augmentation
-(\texttt{back\_translate.py}); near-deduplication with MinHash LSH; LoRA
-fine-tuning pipeline; cross-validation framework for LoRA; result
-analysis and visualization.
+\textbf{Shreyas Natarajan:} Developed the back-translation and lexical editing augmentation strategies, contributed to overall system integration, and led training execution, result analysis, and visualization.
 
-\textbf{Mark Aashish Lnu:} Lexical editing augmentation
-(\texttt{lexical\_edit.py}); full fine-tuning pipeline
-(\texttt{train\_full\_finetune.py}); 5-fold cross-validation framework;
-evaluation metrics (CSR, Hard CSR); LLM-judge integration.
+\textbf{Mark Aashish Lnu:}  conducted dataset clustering analysis, implemented the modular ConstraintChecker (18 constraint types), built the full fine-tuning pipeline with the constraint-aware loss, established the 5-fold cross-validation framework.
 
-\textbf{Gayathri Ethiraj:} Dataset clustering analysis;
-\texttt{ConstraintChecker} implementation; evaluation visualization
-(\texttt{viz\_utils.py}); per-constraint analysis and result
-interpretation; report writing and literature review.
+\textbf{Fnu Rinkle Rose Renny:} Built the LoRA fine-tuning pipeline, contributed to the 5-fold cross-validation framework, designed evaluation visualizations, and led per-constraint analysis and result interpretation.
 
 % ----------------------------------------------------------------
 \begin{thebibliography}{9}
