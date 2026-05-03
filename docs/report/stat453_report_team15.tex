@@ -259,7 +259,7 @@ and \texttt{v\_proj} in all attention layers:
 where $W \in \mathbb{R}^{d \times d}$ is frozen, $A \in \mathbb{R}^{r
 \times d}$ and $B \in \mathbb{R}^{d \times r}$ are trainable, $r{=}8$,
 $\alpha{=}16$, dropout $= 0.05$. This trains 81,500 adapter parameters
-($\approx$0.007\% of weights); the adapter ($\sim$30--60\,MB) is saved
+($\approx$0.007\% of weights); the adapter ($\sim$1.7\,MB) is saved
 while the base model remains frozen.
 
 The pipeline uses \texttt{trl.SFTTrainer} with the Llama-3 chat format:
